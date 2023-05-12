@@ -42,18 +42,19 @@ export const Navigation = ({ isOpen, toggleOpen }: any) => {
           <a className="brand-logo">
             <img
               className="brand-logo__icon"
-              src="svg/KG.svg"
-              alt="adeola logo icon"
+              src="svg/keerthan-logo-left.svg"
+              alt="Keerthan logo icon"
             />
             <span className="brand-logo__text-wrapper">
               <img
                 className="brand-logo__text"
-                src="svg/try3.svg"
-                alt="adeola logo text"
+                src="svg/keerthan-logo-right.svg"
+                alt="Keerthan logo text"
               />
             </span>
           </a>
         </Link>
+        <MenuToggle toggle={toggleOpen} toggleState={isOpen} />
       </div>
     </motion.div>
   );

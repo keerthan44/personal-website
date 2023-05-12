@@ -88,14 +88,19 @@
 }
 
 .navigation-top {
-  margin-top: 25rem;
   @include centerContent;
   // padding: 0 40rem;
   width: 80%;
   margin-left: auto;
   text-align: center;
   margin-right: auto;
+  @media (any-pointer: coarse) {
+    margin-top: 25rem;
+  }
 
+  @media (any-pointer: fine) {
+    margin-top: 40rem;
+  }
   @media only screen and (max-width: 57em) {
     flex-direction: column;
     text-align: left;

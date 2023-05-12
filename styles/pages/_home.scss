@@ -284,6 +284,7 @@
         }
       }
     }
+
     &__middle {
       width: 35rem;
       height: 45rem;
@@ -350,6 +351,18 @@
         margin-bottom: 6rem;
         @media only screen and (max-width: 57em) {
           margin-bottom: 3rem;
+        }
+      }
+      p {
+        display: block;
+        font-size: 1.7rem;
+        line-height: 110.4%;
+        letter-spacing: 0.01em;
+        color: var(--color-gray);
+        text-decoration: none;
+        position: relative;
+        @media (any-pointer: coarse) {
+          margin-bottom: 1rem;
         }
       }
     }
@@ -556,7 +569,7 @@
     margin-top: 4rem;
     gap: 2rem;
     flex-wrap: wrap;
-    max-width: 40rem;
+    max-width: 30rem;
   }
   a {
     @include centerContent;

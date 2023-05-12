@@ -51,39 +51,32 @@ export const MobileNavigation = ({ variants, isOpen }: any) => (
           <h4 className="navigation-h4">DONT BE A STRANGER</h4>
           <div className="navigation-top__left--links">
             <a
-              href="https://github.com/adeolaadeoti"
+              href="/resume/resume.pdf"
+              rel="noopener"
+              target="_blank"
+            >
+             📄  RE
+            </a>
+            <a
+              href="https://github.com/keerthan44"
               rel="noopener"
               target="_blank"
             >
               👾 GH
             </a>
             <a
-              href="https://twitter.com/adeolajs"
-              rel="noopener"
-              target="_blank"
-            >
-              🐦 TW
-            </a>
-            <a
-              href="https://www.linkedin.com/in/adeoladev"
+              href="https://www.linkedin.com/in/keerthan44"
               rel="noopener"
               target="_blank"
             >
               💼 LD
-            </a>
-            <a
-              href="https://www.instagram.com/adeolaadeoti_"
-              rel="noopener"
-              target="_blank"
-            >
-              📸 IN
             </a>
           </div>
         </div>
         <div className="navigation-top__right">
           <h4 className="navigation-h4">HAVE AN IDEA?</h4>
           <a
-            href="mailto:adeolaonigegeara@gmail.com"
+            href="mailto:keerthanon44@gmail.com"
             target="_blank"
             rel="nofollow noopener noreferrer"
           >
@@ -92,53 +85,6 @@ export const MobileNavigation = ({ variants, isOpen }: any) => (
         </div>
       </motion.div>
 
-      <motion.div
-        animate={
-          isOpen
-            ? { opacity: 1, transition: openBottomTransition }
-            : { opacity: 0, transition: closedTansition }
-        }
-        className="navigation-bottom"
-      >
-        <h4 className="navigation-h4">FEATURED PROJECTS</h4>
-        <div className="navigation-bottom__projects">
-          <a
-            target="_blank"
-            rel="noopener"
-            href="https://alexxandria.vercel.app/"
-            className="navigation-bottom__projects-card"
-          >
-            <img src="webp/alexxandria-nav.webp" alt="alexxandria" />
-            <h2>
-              Alexxandria
-              <br />
-              Forque
-            </h2>
-          </a>
-          <a
-            href="https://safarika-adeola.netlify.app/"
-            target="_blank"
-            rel="noopener"
-            className="navigation-bottom__projects-card"
-          >
-            <img src="webp/safarika-nav.webp" alt="safarika" />
-            <h2>Safarika</h2>
-          </a>
-          <a
-            href="https://adeolaadeoti.netlify.app/"
-            target="_blank"
-            rel="noopener"
-            className="navigation-bottom__projects-card"
-          >
-            <img src="webp/adeola-1.webp" alt="adeola" />
-            <h2>
-              AdeolaAdeoti
-              <br />
-              Version 1
-            </h2>
-          </a>
-        </div>
-      </motion.div>
     </motion.div>
   </motion.div>
 );
