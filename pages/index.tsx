@@ -20,18 +20,12 @@ const hoverEffect =
 
 
 const index: React.FC<indexProps> = ({}) => {
-  const [speakerState, setSpeakerState] = useState("muted");
   const [isToggleOpen, setIsToggleOpen] = useState<boolean>(false);
-  const [checker, setChecker] = useState<boolean>(true);
 
   const refScroll = React.useRef(null);
   let lscroll: any;
 
   React.useEffect(() => {
-    if(checker){
-      const audio = document.querySelector("#audioPlayer") as HTMLVideoElement;
-      audio.play(); 
-    }
     ReactGa.initialize("UA-177100391-3");
     ReactGa.pageview(window.location.pathname + window.location.search);
 
@@ -78,18 +72,6 @@ const index: React.FC<indexProps> = ({}) => {
 
     console.clear();
   }, []);
-
-  const handleSpeaker = () => {
-    const audio = document.querySelector("#audioPlayer") as HTMLVideoElement;
-
-    if (speakerState === "muted") {
-      setSpeakerState("unmuted");
-      audio.pause();
-    } else {
-      setSpeakerState("muted");
-      audio.play();
-    }
-  };
 
   function toggleBodyScroll(isToggleOpen: boolean) {
     if (isToggleOpen === false) {
@@ -138,9 +120,6 @@ const index: React.FC<indexProps> = ({}) => {
             content="I'm a self-taught Back End Developer and turning ideas into real life products is my calling."
           />
         </Head>
-        <audio loop id="audioPlayer" style={{ display: "none" }}>
-          <source src="sound/preloader.mp3" type="audio/mp3" />
-        </audio>
         <motion.div
           data-scroll
           data-scroll-sticky
@@ -197,63 +176,6 @@ const index: React.FC<indexProps> = ({}) => {
           </header>
           <div className="header__footer">
             <div className="header__footer--left">
-              <div className="speaker">
-                <div
-                  onClick={handleSpeaker}
-                  className={`${"speaker__toggle"} ${
-                    speakerState === "unmuted"
-                      ? `${"speaker__toggle--anim"}`
-                      : ``
-                  }`}
-                >
-                  &nbsp;
-                </div>
-                <div className="speaker__muted">
-                  <img src="svg/muted.svg" alt="muted icon" />
-                </div>
-                <div className="speaker__unmuted">
-                  <svg
-                    width="14"
-                    height="11"
-                    viewBox="0 0 15 11"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <rect
-                      x="0.599976"
-                      y="1.06665"
-                      width="1.4"
-                      height="10"
-                      fill="#F2F2F2"
-                      className="rect1-anim"
-                    />
-                    <rect
-                      x="9"
-                      y="1.06665"
-                      width="1.4"
-                      height="10"
-                      fill="#F2F2F2"
-                      className="rect2-anim"
-                    />
-                    <rect
-                      x="4.79999"
-                      y="1.06665"
-                      width="1.4"
-                      height="10"
-                      fill="#F2F2F2"
-                      className="rect3-anim"
-                    />
-                    {/* <rect
-                      x="13.2"
-                      y="1.06665"
-                      width="1.4"
-                      height="10"
-                      fill="#F2F2F2"
-                      className="rect4-anim"
-                    /> */}
-                  </svg>
-                </div>
-              </div>
             </div>
             <div className="header__footer--right">
               <a href="/resume/resume.pdf" rel="noopener" target="_blank">
