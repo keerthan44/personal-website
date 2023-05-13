@@ -1,9 +1,15 @@
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import Head from "next/head";
 import { Navigation } from "../components/Navigation/Navigation";
 import ReactGa from "react-ga";
 
 interface indexProps {}
+
+const transition: { duration: number; ease: number[] } = {
+  duration: 1.4,
+  ease: [0.6, 0.01, -0.05, 0.9],
+};
 
 const locomotiveScroll =
   typeof window !== `undefined` ? require("locomotive-scroll").default : null;
@@ -135,7 +141,7 @@ const index: React.FC<indexProps> = ({}) => {
         <audio loop id="audioPlayer" autoPlay style={{ display: "none" }}>
           <source src="sound/preloader.mp3" type="audio/mp3" />
         </audio>
-        {/* <motion.div
+        <motion.div
           data-scroll
           data-scroll-sticky
           data-scroll-target="#menu-target"
@@ -162,7 +168,7 @@ const index: React.FC<indexProps> = ({}) => {
               <p className="preloader__text">Ruby on Rails</p>
             </motion.div>
           </div>
-        </motion.div> */}
+        </motion.div>
         {/* <div className="cursor"></div> */}
         <Navigation
           isOpen={isToggleOpen}
