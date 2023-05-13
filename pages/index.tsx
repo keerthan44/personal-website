@@ -7,7 +7,7 @@ import ReactGa from "react-ga";
 interface indexProps {}
 
 const transition: { duration: number; ease: number[] } = {
-  duration: 1.4,
+  duration: 0.8,
   ease: [0.6, 0.01, -0.05, 0.9],
 };
 
@@ -131,11 +131,7 @@ const index: React.FC<indexProps> = ({}) => {
           <meta property="og:image" content="webp/preview-image.png" />
           <meta
             property="og:description"
-            content="I'm a self-taught Front End Developer and turning ideas into real life products is my calling."
-          />
-          <meta
-            name="twitter:title"
-            content="Keerthan Gopalalrishnan &mdash; Backend Developer"
+            content="I'm a self-taught Back End Developer and turning ideas into real life products is my calling."
           />
         </Head>
         <audio loop id="audioPlayer" autoPlay style={{ display: "none" }}>
