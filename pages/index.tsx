@@ -148,7 +148,6 @@ const index: React.FC<indexProps> = ({}) => {
             </motion.div>
           </div>
         </motion.div>
-        {/* <div className="cursor"></div> */}
         <Navigation
           isOpen={isToggleOpen}
           toggleOpen={() => toggleBodyScroll(isToggleOpen)}
@@ -200,7 +199,7 @@ const index: React.FC<indexProps> = ({}) => {
         </div>
         <main className="container">
           <p className="about-text">
-            Hello stranger! 👋, my name is Keerthan and I am a backend engineer,
+            Hello! My name is Keerthan and I am a backend engineer,
             passionate <br /> about products that posses a challenge.
           </p>
           <section id="sectionProjects" className="section-projects">
@@ -304,9 +303,9 @@ const index: React.FC<indexProps> = ({}) => {
                 </h2>
                 <p className="project-card__paragraph">
                   Built and operated a standalone {!isMobileScreen && <br />}
-                  device for people with alzheimer.
+                  device for people with alzheimer
                   {!isMobileScreen && <br />}
-                  patients' location.
+                  patients' location along with an APP.
                 </p>
                 <div className="project-card__socials">
                   <a
@@ -322,7 +321,7 @@ const index: React.FC<indexProps> = ({}) => {
           </section>
           <section className="section-contact">
             <h1 className="heading-1">
-              <span>Sold Yet? </span> <small>🤙</small>
+              <span>Interested? </span>
             </h1>
             <h2 className="section-contact__h2">
               Thanks for stopping by, I’m currently looking to join a team of
@@ -336,7 +335,7 @@ const index: React.FC<indexProps> = ({}) => {
                 resume 📄.{" "}
               </a>
               &nbsp;If you think we might be a good fit for one another, give me
-              a<a href="tel:+917676724337"> call 🇳🇬 &nbsp;</a>
+              a<a href="tel:+917676724337"> call ☎️ &nbsp;</a>
               or send me an
               <a
                 href="https://mail.google.com/mail/u/0/?fs=1&tf=cm&source=mailto&su=&to=keerthan44@gmail.com&bcc=&body="
@@ -350,9 +349,8 @@ const index: React.FC<indexProps> = ({}) => {
           </section>
           <section className="section-socials">
             <h1 className="heading-1">
-              <span>Dont be a stranger!</span> <small>👋</small>
-            </h1>
-            <p className="paragraph">Connect with me online</p>
+              <span>Connect With Me Online!</span>            </h1>
+              <p className="paragraph">Here are my details</p>
             <div className="section-socials--links">
               <a href="/resume/resume.pdf" rel="noopener" target="_blank">
                 📄 RESUME
