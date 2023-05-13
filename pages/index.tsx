@@ -22,12 +22,16 @@ const hoverEffect =
 const index: React.FC<indexProps> = ({}) => {
   const [speakerState, setSpeakerState] = useState("muted");
   const [isToggleOpen, setIsToggleOpen] = useState<boolean>(false);
-
+  const [checker, setChecker] = useState<boolean>(true);
 
   const refScroll = React.useRef(null);
   let lscroll: any;
 
   React.useEffect(() => {
+    if(checker){
+      const audio = document.querySelector("#audioPlayer") as HTMLVideoElement;
+      audio.play(); 
+    }
     ReactGa.initialize("UA-177100391-3");
     ReactGa.pageview(window.location.pathname + window.location.search);
 
@@ -134,7 +138,7 @@ const index: React.FC<indexProps> = ({}) => {
             content="I'm a self-taught Back End Developer and turning ideas into real life products is my calling."
           />
         </Head>
-        <audio loop id="audioPlayer" autoPlay style={{ display: "none" }}>
+        <audio loop id="audioPlayer" style={{ display: "none" }}>
           <source src="sound/preloader.mp3" type="audio/mp3" />
         </audio>
         <motion.div
