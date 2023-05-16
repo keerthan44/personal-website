@@ -45,7 +45,7 @@ export const MobileNavigation = ({ variants, isOpen }: any) => (
           <h4 className="navigation-h4">DONT BE A STRANGER</h4>
           <div className="navigation-top__left--links">
             <a
-              href="/resume/resume.pdf"
+              href="/resume/KeerthanGopalakrishnan.pdf"
               rel="noopener"
               target="_blank"
             >

@@ -177,7 +177,7 @@ const index: React.FC<indexProps> = ({}) => {
             <div className="header__footer--left">
             </div>
             <div className="header__footer--right">
-              <a href="/resume/resume.pdf" rel="noopener" target="_blank">
+              <a href="/resume/KeerthanGopalakrishnan.pdf" rel="noopener" target="_blank">
                 📄 RE
               </a>
               <a
@@ -327,7 +327,7 @@ const index: React.FC<indexProps> = ({}) => {
               Thanks for stopping by, I’m currently looking to join a team of
               developers. Here is my
               <a
-                href="/resume/resume.pdf"
+                href="/resume/KeerthanGopalakrishnan.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -352,7 +352,7 @@ const index: React.FC<indexProps> = ({}) => {
               <span>Connect With Me Online!</span>            </h1>
               <p className="paragraph">Here are my details</p>
             <div className="section-socials--links">
-              <a href="/resume/resume.pdf" rel="noopener" target="_blank">
+              <a href="/resume/KeerthanGopalakrishnan.pdf" rel="noopener" target="_blank">
                 📄 RESUME
               </a>
               <a
