@@ -247,7 +247,7 @@ const index: React.FC<indexProps> = ({}) => {
                 className="project-card__middle"
                 data-displacement="webp/myDistorsionImage.webp"
               >
-                <img src="webp/safarika-1.webp" alt="battleBots" />
+                <img src="webp/battleBots-1.webp" alt="battleBots" />
                 <img src="webp/battleBots-2.webp" alt="battleBots logo" />
               </div>
               <div className="project-card__right">
