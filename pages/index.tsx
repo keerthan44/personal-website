@@ -94,7 +94,7 @@ const index: React.FC<indexProps> = ({}) => {
       <div id="menu-target" data-scroll-container ref={refScroll}>
         <Head>
           <link rel="icon" href="svg/favicon.svg" />
-          <link href="https://keerthangopalakrishnan.xyz/" rel="canonical" />
+          <link href="https://keerthan.io/" rel="canonical" />
           <meta name="theme-color" content="#10101A" />
           <meta
             name="apple-mobile-web-app-status-bar-style"
@@ -112,7 +112,7 @@ const index: React.FC<indexProps> = ({}) => {
           />
           <meta
             property="og:url"
-            content="https://keerthangopalakrishnan.xyz/"
+            content="https://keerthan.io/"
           />
           <meta property="og:image" content="webp/preview-image.png" />
           <meta
