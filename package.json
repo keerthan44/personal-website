@@ -7,6 +7,9 @@
     "start": "next start",
     "type-check": "tsc"
   },
+  "engines": {
+    "node": "24.x"
+  },
   "dependencies": {
     "framer-motion": "latest",
     "hover-effect": "^1.1.0",
