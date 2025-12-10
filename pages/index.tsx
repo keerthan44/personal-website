@@ -140,7 +140,7 @@ const index: React.FC<indexProps> = ({}) => {
               animate={{ x: 0, opacity: 1, transition: { ...transition } }}
               className="preloader__right"
             >
-              <p className="preloader__text">FastApi</p>
+              <p className="preloader__text">FastAPI</p>
               <p className="preloader__text">Livekit Voice Stack</p>
               <p className="preloader__text">ReactJs</p>
               <p className="preloader__text">Django</p>
