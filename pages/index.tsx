@@ -140,9 +140,9 @@ const index: React.FC<indexProps> = ({}) => {
               animate={{ x: 0, opacity: 1, transition: { ...transition } }}
               className="preloader__right"
             >
-              <p className="preloader__text">Spring Boot</p>
-              <p className="preloader__text">React Native</p>
-              <p className="preloader__text">React JS</p>
+              <p className="preloader__text">FastApi</p>
+              <p className="preloader__text">Livekit Voice Stack</p>
+              <p className="preloader__text">ReactJs</p>
               <p className="preloader__text">Django</p>
               <p className="preloader__text">Ruby on Rails</p>
             </motion.div>
