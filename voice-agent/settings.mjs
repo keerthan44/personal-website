@@ -1,6 +1,6 @@
 import { RESUME } from './resume.mjs';
 import { buildPrompt } from './prompt.mjs';
-import { pronounceAll } from './pronunciations.mjs';
+import { pronounceAll } from '../public/voice/pronunciations.mjs';
 
 export const KEYTERMS = [
   'Keerthan', 'Gopalakrishnan', 'LiveKit', 'Deepgram', 'Kraftx', 'IntellifyAi',

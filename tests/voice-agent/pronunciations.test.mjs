@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import { PRONUNCIATIONS, markup, pronounceAll } from '../../voice-agent/pronunciations.mjs';
+import { PRONUNCIATIONS, markup, pronounceAll } from '../../public/voice/pronunciations.mjs';
 import { GREETING } from '../../voice-agent/settings.mjs';
 
 test('markup format is exact', () => {

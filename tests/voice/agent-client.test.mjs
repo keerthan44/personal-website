@@ -384,7 +384,7 @@ test('warning once at 150 s; at 180 s InjectAgentMessage interrupt, then end(cap
   const inj = s.ws.json().filter((m) => m.type === 'InjectAgentMessage');
   assert.deepStrictEqual(inj, [{
     type: 'InjectAgentMessage',
-    message: "That's our three minutes. Thanks for calling! You'll find Keerthan's contact details at the bottom of the page.",
+    message: "That's our three minutes. Thanks for calling! You'll find \\{\"word\": \"Keerthan\", \"pronounce\": \"ˈkiːɹθən\"\\}'s contact details at the bottom of the page.",
     behavior: 'interrupt',
   }]);
   assert.strictEqual(s.of('end').length, 0);

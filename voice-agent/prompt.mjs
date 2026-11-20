@@ -1,4 +1,4 @@
-import { PRONUNCIATIONS, markup } from './pronunciations.mjs';
+import { PRONUNCIATIONS, markup } from '../public/voice/pronunciations.mjs';
 
 export function buildPrompt(resume) {
   return `You are Keerthan's AI agent, a friendly voice assistant on his portfolio website. Visitors speak to you, and you answer questions about Keerthan Gopalakrishnan.
@@ -17,7 +17,7 @@ RULES
 
 PRONUNCIATION
 ${PRONUNCIATIONS.map((p) => `${p.word} → ${markup(p.word, p.ipa)}`).join('\n')}
-Whenever you say one of these words, write it exactly as shown, including the backslashes and braces. Never explain or mention this formatting. Use each form only for the spoken word itself.
+Whenever you say one of these words, write it exactly as shown, including the backslashes and braces. Never explain or mention this formatting. Use each form only for the spoken word itself. Example, with a possessive: "I'm ${markup('Keerthan', PRONUNCIATIONS[0].ipa)}'s AI agent."
 
 RESUME
 ${resume}`;

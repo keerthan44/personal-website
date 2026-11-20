@@ -236,6 +236,11 @@ test('production without ANALYTICS_SALT skips the Redis per-IP cap', async () =>
     s.clock.advance(20_000);
   }
   assert.strictEqual(s.redis.strs.size, 0, 'no ipcap key written');
+  // the in-memory limit still applies: 6th request within a minute -> 429
+  const m = capSetup({ VERCEL_ENV: 'production', ANALYTICS_SALT: '' });
+  for (let i = 0; i < 5; i++) { const r = mkRes(); await m.handler(mkReq(), r); assert.strictEqual(r.statusCode, 200); }
+  const r6 = mkRes(); await m.handler(mkReq(), r6);
+  assert.strictEqual(r6.statusCode, 429);
 });
 
 test('VOICE_IP_HOURLY_CAP overrides the per-IP cap', async () => {

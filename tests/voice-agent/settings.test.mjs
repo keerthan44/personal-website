@@ -46,3 +46,7 @@ test('prompt has pronunciation section with exact markup', () => {
   assert.ok(prompt.includes('Never explain or mention this formatting'));
   assert.ok(prompt.includes('Keerthan Gopalakrishnan'));
 });
+
+test('prompt has a possessive example sentence built from markup()', () => {
+  assert.ok(prompt.includes('I\'m \\{"word": "Keerthan", "pronounce": "ˈkiːɹθən"\\}\'s AI agent.'));
+});

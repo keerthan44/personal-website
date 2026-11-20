@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert';
 import { cleanSpoken } from '../../public/voice/captions.mjs';
-import { PRONUNCIATIONS, pronounceAll } from '../../voice-agent/pronunciations.mjs';
+import { PRONUNCIATIONS, pronounceAll } from '../../public/voice/pronunciations.mjs';
 import { GREETING } from '../../voice-agent/settings.mjs';
 
 const exact = '\\{"word": "Keerthan", "pronounce": "ˈkiːɹθən"\\}';
@@ -34,4 +34,28 @@ test('round trips', () => {
   assert.strictEqual(cleanSpoken(pronounceAll(plain)), plain);
   const s = PRONUNCIATIONS.map((p) => p.word).join(', ') + ".";
   assert.strictEqual(cleanSpoken(pronounceAll(s)), s);
+});
+
+test('unclosed trailing fragment becomes the word', () => {
+  assert.strictEqual(cleanSpoken('Hi \\{"word": "Keerthan", "pronounce": "ˈkiː'), 'Hi Keerthan');
+  assert.strictEqual(cleanSpoken('Hi \\{"word": "Keerthan", '), 'Hi Keerthan');
+  assert.strictEqual(cleanSpoken('Hi \\{"pronounce": "ˈkiːɹθən", "word": "Keerthan'), 'Hi Keerthan');
+  assert.strictEqual(cleanSpoken('Hi \\{"pronounce": "ˈkiː'), 'Hi ');
+  assert.strictEqual(cleanSpoken('Hi \\{'), 'Hi ');
+});
+
+test('orphan leading tail is removed', () => {
+  assert.strictEqual(cleanSpoken('"pronounce": "ˈkiːɹθən"\\} is here'), ' is here');
+  assert.strictEqual(cleanSpoken('ɹθən"\\}\'s work'), "'s work");
+  assert.strictEqual(cleanSpoken('\\}'), '');
+  for (const s of ['"word":', '"pronounce":']) assert.ok(!cleanSpoken(`${s} "x"\\} a`).includes(s));
+});
+
+test('many backslashes finish fast', () => {
+  const s = '\\'.repeat(10000) + '{"word": "x"';
+  for (const input of [s, '\\'.repeat(10000), '{'.repeat(5000)]) {
+    const t0 = performance.now();
+    cleanSpoken(input);
+    assert.ok(performance.now() - t0 < 50);
+  }
 });
