@@ -1,6 +1,6 @@
 import { buildSettings } from './settings.mjs';
 import { clientIp, originAllowed as originOk } from './guard.mjs';
-import { redisFromEnv, dayKey } from './analytics.mjs';
+import { redisFromEnv, dayKey, settle } from './analytics.mjs';
 
 const GRANT_URL = 'https://api.deepgram.com/v1/auth/grant';
 const TTL_SECONDS = 30;
@@ -76,7 +76,8 @@ export function createTokenHandler({ fetchImpl, env, now }) {
         const redis = redisFromEnv(env, fetchImpl);
         if (redis) {
           const day = `day:${dayKey(now())}`;
-          redis.pipeline([['HINCRBY', day, 'token', 1], ['EXPIRE', day, 8640000]]).catch(() => {});
+          // Awaited (bounded) so serverless doesn't freeze before it lands.
+          await settle(redis.pipeline([['HINCRBY', day, 'token', 1], ['EXPIRE', day, 8640000]]), 400);
         }
       } catch { /* analytics must never affect the grant */ }
       return send(res, 200, {

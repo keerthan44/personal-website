@@ -21,7 +21,7 @@ const mkReq = (o = {}) => ({
   query: {},
   ...o,
 });
-const ENV = { UPSTASH_REDIS_REST_URL: 'https://r.example', UPSTASH_REDIS_REST_TOKEN: 'tok', NODE_ENV: 'production' };
+const ENV = { UPSTASH_REDIS_REST_URL: 'https://r.example', UPSTASH_REDIS_REST_TOKEN: 'tok', ANALYTICS_SALT: 's', NODE_ENV: 'production' };
 const T0 = Date.UTC(2026, 10, 21, 12, 0, 0);
 
 function setup(envOver = {}, fetchOver) {
@@ -182,6 +182,44 @@ test('stats: json 30 rows newest first with click rate', async () => {
   assert.strictEqual(data.days[0].lengths['<15'], 2);
 });
 
+test('stats: json includes token count', async () => {
+  const fetchImpl = async (url, init) => ({ ok: true, json: async () => JSON.parse(init.body).map((c) => c[0] === 'PFCOUNT' ? { result: 1 } : { result: ['token', '6'] }) });
+  const h = createStatsHandler({ fetchImpl, env: { ...ENV, STATS_KEY: 'k' }, now: () => T0 });
+  const res = mkRes();
+  await h(mkReq({ method: 'GET', query: { key: 'k', format: 'json' } }), res);
+  const data = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
+  assert.strictEqual(data.days[0].tokens, 6);
+  assert.strictEqual(data.totals.tokens, 180);
+});
+
+test('production without salt -> event counted, no PFADD', async () => {
+  const { handler, bodies } = setup({ ANALYTICS_SALT: '' });
+  const res = mkRes();
+  await handler(mkReq(), res);
+  assert.strictEqual(res.statusCode, 204);
+  assert.ok(has(bodies, ['HINCRBY', 'day:2026-11-21', 'view', 1]));
+  assert.ok(!flat(bodies).some((c) => c[0] === 'PFADD'));
+});
+
+test('dev without salt still PFADDs', async () => {
+  const { handler, bodies } = setup({ ANALYTICS_SALT: '', NODE_ENV: 'development' });
+  await handler(mkReq({ headers: { origin: 'http://localhost:3000', 'user-agent': UA } }), mkRes());
+  assert.ok(flat(bodies).some((c) => c[0] === 'PFADD'));
+});
+
+test('token route: hanging redis still returns 200 within timeout', async () => {
+  const fetchImpl = async (url) => {
+    if (url.includes('deepgram')) return { ok: true, status: 200, json: async () => ({ access_token: 't', expires_in: 30 }) };
+    return new Promise(() => {});
+  };
+  const handler = createTokenHandler({ fetchImpl, env: { ...ENV, DEEPGRAM_API_KEY: 'k' }, now: () => T0 });
+  const res = mkRes();
+  const t = Date.now();
+  await handler(mkReq(), res);
+  assert.strictEqual(res.statusCode, 200);
+  assert.ok(Date.now() - t < 1500);
+});
+
 test('stats: html has table and caption', async () => {
   const res = mkRes();
   await statsSetup()(mkReq({ method: 'GET', query: { key: 'sekret' } }), res);
@@ -205,7 +243,6 @@ test('token route: grant triggers one HINCRBY token; redis failure keeps 200', a
     const handler = createTokenHandler({ fetchImpl, env: { ...ENV, DEEPGRAM_API_KEY: 'k' }, now: () => T0 });
     const res = mkRes();
     await handler(mkReq(), res);
-    await new Promise((r) => setImmediate(r));
     assert.strictEqual(res.statusCode, 200);
     if (!redisFails) {
       const incr = redisBodies.flat().filter((c) => c[0] === 'HINCRBY');

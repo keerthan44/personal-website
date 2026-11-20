@@ -33,6 +33,13 @@ export function redisFromEnv(env, fetchImpl) {
   };
 }
 
+// Await a promise but give up after ms; never rejects.
+export function settle(promise, ms = 400) {
+  let timer;
+  const timeout = new Promise((resolve) => { timer = setTimeout(resolve, ms); });
+  return Promise.race([Promise.resolve(promise).catch(() => {}), timeout]).finally(() => clearTimeout(timer));
+}
+
 export const dayKey = (ms) => new Date(ms).toISOString().slice(0, 10);
 
 export function createTrackHandler({ fetchImpl, env, now }) {
@@ -82,13 +89,14 @@ export function createTrackHandler({ fetchImpl, env, now }) {
         }
       }
       cmds.push(['EXPIRE', day, TTL]);
-      if (e === 'view') {
+      const salt = env.ANALYTICS_SALT || (env.NODE_ENV === 'production' ? '' : 'portfolio');
+      if (e === 'view' && salt) {
         const hash = createHash('sha256')
-          .update(`${d}|${ip}|${ua}|${env.ANALYTICS_SALT || 'portfolio'}`)
+          .update(`${d}|${ip}|${ua}|${salt}`)
           .digest('hex').slice(0, 16);
         cmds.push(['PFADD', `uv:${d}`, hash], ['EXPIRE', `uv:${d}`, TTL]);
       }
-      await redis.pipeline(cmds);
+      await settle(redis.pipeline(cmds));
     } catch (err) {
       console.error('track: failed', err && err.name);
     }
@@ -118,7 +126,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 
 function renderHtml(data) {
   const t = data.totals;
-  const row = (r) => `<tr><th scope="row">${esc(r.date)}</th><td>${r.visitors}</td><td>${r.views}</td><td>${r.talkClicks}</td><td>${r.clickRate}%</td><td>${r.connected}</td><td>${r.offline}</td><td>${r.lengths['<15']} / ${r.lengths['15-60']} / ${r.lengths['60-120']} / ${r.lengths['120+']}</td><td>${r.questions}</td></tr>`;
+  const row = (r) => `<tr><th scope="row">${esc(r.date)}</th><td>${r.visitors}</td><td>${r.views}</td><td>${r.talkClicks}</td><td>${r.clickRate}%</td><td>${r.connected}</td><td>${r.offline}</td><td>${r.tokens}</td><td>${r.lengths['<15']} / ${r.lengths['15-60']} / ${r.lengths['60-120']} / ${r.lengths['120+']}</td><td>${r.questions}</td></tr>`;
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><title>Site stats</title>
@@ -127,6 +135,7 @@ function renderHtml(data) {
 *{box-sizing:border-box}
 body{margin:0;padding:24px 16px;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif}
 main{max-width:1000px;margin:0 auto}
+h2{font-size:1.1rem;margin:0 0 8px}.sum{display:flex;flex-wrap:wrap;gap:8px 24px;list-style:none;padding:0;margin:0 0 24px;color:var(--muted)}.sum b{color:var(--fg)}
 h1{font-size:1.6rem;margin:0 0 8px}
 p{color:var(--muted);margin:0 0 20px}
 .wrap{overflow-x:auto}
@@ -139,11 +148,13 @@ tfoot th,tfoot td{color:var(--fg);font-weight:700;border-top:2px solid var(--acc
 </style></head><body><main>
 <h1>Site stats</h1>
 <p>Last ${STATS_DAYS} days, UTC. No cookies, no stored IPs.</p>
+<section aria-labelledby="sum"><h2 id="sum">30-day totals</h2>
+<ul class="sum"><li>Visitors (sum of daily) <b>${t.visitors}</b></li><li>Views <b>${t.views}</b></li><li>Talk clicks <b>${t.talkClicks}</b> (${t.clickRate}%)</li><li>Connected <b>${t.connected}</b></li><li>Offline <b>${t.offline}</b></li><li>Calls started (server) <b>${t.tokens}</b></li><li>Questions <b>${t.questions}</b></li></ul></section>
 <div class="wrap"><table>
 <caption>Daily visits and AI agent calls, newest first. Call lengths are counts of calls under 15 s / 15-60 s / 60-120 s / 120 s or more.</caption>
-<thead><tr><th scope="col">Date</th><th scope="col">Visitors</th><th scope="col">Views</th><th scope="col">Talk clicks</th><th scope="col">Click rate</th><th scope="col">Connected</th><th scope="col">Offline</th><th scope="col">Call lengths</th><th scope="col">Questions</th></tr></thead>
+<thead><tr><th scope="col">Date</th><th scope="col">Visitors</th><th scope="col">Views</th><th scope="col">Talk clicks</th><th scope="col">Click rate</th><th scope="col">Connected</th><th scope="col">Offline</th><th scope="col">Calls started (server)</th><th scope="col">Call lengths</th><th scope="col">Questions</th></tr></thead>
 <tbody>${data.days.map(row).join('')}</tbody>
-<tfoot><tr><th scope="row">30-day total</th><td>${t.visitors}</td><td>${t.views}</td><td>${t.talkClicks}</td><td>${t.clickRate}%</td><td>${t.connected}</td><td>${t.offline}</td><td>${t.lengths['<15']} / ${t.lengths['15-60']} / ${t.lengths['60-120']} / ${t.lengths['120+']}</td><td>${t.questions}</td></tr></tfoot>
+<tfoot><tr><th scope="row">30-day total</th><td>${t.visitors}</td><td>${t.views}</td><td>${t.talkClicks}</td><td>${t.clickRate}%</td><td>${t.connected}</td><td>${t.offline}</td><td>${t.tokens}</td><td>${t.lengths['<15']} / ${t.lengths['15-60']} / ${t.lengths['60-120']} / ${t.lengths['120+']}</td><td>${t.questions}</td></tr></tfoot>
 </table></div></main></body></html>`;
 }
 
@@ -167,7 +178,7 @@ export function createStatsHandler({ fetchImpl, env, now }) {
       console.error('stats: failed', err && err.name);
       return res.status(502).send('Analytics store unavailable');
     }
-    const blank = () => ({ visitors: 0, views: 0, talkClicks: 0, clickRate: 0, connected: 0, offline: 0, questions: 0, lengths: { '<15': 0, '15-60': 0, '60-120': 0, '120+': 0 } });
+    const blank = () => ({ visitors: 0, tokens: 0, views: 0, talkClicks: 0, clickRate: 0, connected: 0, offline: 0, questions: 0, lengths: { '<15': 0, '15-60': 0, '60-120': 0, '120+': 0 } });
     const days = dates.map((date, i) => {
       const h = toMap(out[i * 2 + 1] && out[i * 2 + 1].result);
       const r = blank();
@@ -177,6 +188,7 @@ export function createStatsHandler({ fetchImpl, env, now }) {
       r.talkClicks = h['talk-click'] || 0;
       r.connected = h['call-connected'] || 0;
       r.offline = h['call-offline'] || 0;
+      r.tokens = h.token || 0;
       r.questions = h.question || 0;
       for (const k of Object.keys(r.lengths)) r.lengths[k] = h[`call-ended:secs=${k}`] || 0;
       r.clickRate = r.views ? Math.round((r.talkClicks / r.views) * 1000) / 10 : 0;
@@ -184,7 +196,7 @@ export function createStatsHandler({ fetchImpl, env, now }) {
     });
     const totals = blank();
     for (const r of days) {
-      for (const k of ['visitors', 'views', 'talkClicks', 'connected', 'offline', 'questions']) totals[k] += r[k];
+      for (const k of ['visitors', 'tokens', 'views', 'talkClicks', 'connected', 'offline', 'questions']) totals[k] += r[k];
       for (const k of Object.keys(totals.lengths)) totals.lengths[k] += r.lengths[k];
     }
     totals.clickRate = totals.views ? Math.round((totals.talkClicks / totals.views) * 1000) / 10 : 0;
