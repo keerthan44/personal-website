@@ -1,4 +1,6 @@
 import { buildSettings } from './settings.mjs';
+import { clientIp, originAllowed as originOk } from './guard.mjs';
+import { redisFromEnv, dayKey } from './analytics.mjs';
 
 const GRANT_URL = 'https://api.deepgram.com/v1/auth/grant';
 const TTL_SECONDS = 30;
@@ -6,17 +8,6 @@ const MINUTE_MS = 60 * 1000;
 const DAY_MS = 24 * 60 * MINUTE_MS;
 const PER_MINUTE = 5;
 const PER_DAY = 40;
-const DEFAULT_ORIGINS = 'https://www.itskeerthan.com,https://itskeerthan.com';
-
-function clientIp(req) {
-  const xff = req.headers['x-forwarded-for'];
-  const first = Array.isArray(xff) ? xff[0] : xff;
-  if (first) {
-    const ip = String(first).split(',')[0].trim();
-    if (ip) return ip;
-  }
-  return (req.socket && req.socket.remoteAddress) || 'unknown';
-}
 
 export function createTokenHandler({ fetchImpl, env, now }) {
   const hits = new Map(); // ip -> timestamps (ms) within the last 24h
@@ -25,16 +16,7 @@ export function createTokenHandler({ fetchImpl, env, now }) {
     res.status(status).json(body);
   }
 
-  function originAllowed(origin) {
-    if (!origin) return false;
-    const allowed = (env.VOICE_ALLOWED_ORIGINS || DEFAULT_ORIGINS)
-      .split(',').map((s) => s.trim()).filter(Boolean);
-    if (allowed.includes(origin)) return true;
-    if (env.NODE_ENV !== 'production') {
-      return /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
-    }
-    return false;
-  }
+  const originAllowed = (origin) => originOk(env, origin);
 
   // Returns retryAfter seconds if limited, else 0 (and records the hit).
   function checkRate(ip) {
@@ -90,6 +72,13 @@ export function createTokenHandler({ fetchImpl, env, now }) {
         console.error('voice-token: grant response missing access_token');
         return send(res, 503, { error: 'unavailable' });
       }
+      try {
+        const redis = redisFromEnv(env, fetchImpl);
+        if (redis) {
+          const day = `day:${dayKey(now())}`;
+          redis.pipeline([['HINCRBY', day, 'token', 1], ['EXPIRE', day, 8640000]]).catch(() => {});
+        }
+      } catch { /* analytics must never affect the grant */ }
       return send(res, 200, {
         token: data.access_token,
         expiresIn: data.expires_in,

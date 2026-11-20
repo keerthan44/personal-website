@@ -612,6 +612,9 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
    reached, the panel falls back to scripted offline answers.
    ========================================================= */
 import { createVoiceCall } from '/voice/agent-client.mjs';
+import { track } from '/track.mjs';
+
+track('view');
 
 const $ = id => document.getElementById(id);
 const panel = $('call'), talk = $('talkBtn'), endBtn = $('callEnd'), micBtn = $('callMic'), micT = $('callMicT');
@@ -714,23 +717,25 @@ function onUserText(text) {
   recent = recent.filter(r => now - r.at < 5000);
   const i = recent.findIndex(r => r.k === k);
   if (i >= 0) { recent.splice(i, 1); return; }           // our own typed text echoed back
+  track('question', { via: 'voice' });
   userTurn(t);
 }
 
 /* ---------- asking: chips and the typed form ---------- */
-function ask(text) {
+function ask(text, via = 'typed') {
   const t = (text || '').trim(); if (!t) return false;
   if (mode === 'live') {
+    track('question', { via });
     userTurn(t);
     if (call.sendText(t)) recent.push({ k: t.toLowerCase(), at: performance.now() }); else pending.push(t);
-  } else if (mode === 'offline') { userTurn(t); offlineAnswer(t); }
+  } else if (mode === 'offline') { track('question', { via }); userTurn(t); offlineAnswer(t); }
   return true;
 }
 function flushPending() {
   const list = pending; pending = [];
   list.forEach(t => { if (call && call.sendText(t)) recent.push({ k: t.toLowerCase(), at: performance.now() }); });
 }
-INTENTS.forEach(i => { const b = document.createElement('button'); b.type = 'button'; b.textContent = i.q; b.addEventListener('click', () => ask(i.q)); qs.appendChild(b); });
+INTENTS.forEach(i => { const b = document.createElement('button'); b.type = 'button'; b.textContent = i.q; b.addEventListener('click', () => ask(i.q, 'chip')); qs.appendChild(b); });
 form.addEventListener('submit', e => { e.preventDefault(); if (ask(input.value)) input.value = ''; input.focus(); });
 function syncMic() { micBtn.setAttribute('aria-pressed', micOn ? 'true' : 'false'); micT.textContent = micOn ? ' on' : ' off'; }
 micBtn.addEventListener('click', () => { micOn = !micOn; if (call) call.setMicEnabled(micOn); syncMic(); });
@@ -751,6 +756,7 @@ function detach() { unsubs.forEach(u => u()); unsubs = []; call = null; }
 
 function startCall() {
   if (mode !== 'idle') return;
+  track('talk-click');
   const c = createVoiceCall();
   call = c; mode = 'live';
   resetPanel();
@@ -772,7 +778,7 @@ function startCall() {
 }
 function onState(s) {
   if (s === 'ended') return;                     // the end event closes the panel
-  if (s === 'listening' && !connectedAt) { connectedAt = performance.now(); startTimer(); flushPending(); }
+  if (s === 'listening' && !connectedAt) { connectedAt = performance.now(); track('call-connected'); startTimer(); flushPending(); }
   if (s === 'interrupted' && orb) orb.cu.uTalk.value = 0;
   setStatus(STATUS[s] || s); setVisual(s);
 }
@@ -790,6 +796,7 @@ function onMic({ available }) {
 }
 function onError(err) {
   const kind = err.kind;
+  track('call-offline', { kind });
   detach(); stopTimer();
   showAlert(kind === 'rate_limited' ? 'rate' : 'offline', kind === 'rate_limited' ? ERR_RATE : ERR_OFFLINE);
   enterOffline();
@@ -824,7 +831,12 @@ function offlineAnswer(text) {
 /* ---------- ending ---------- */
 function hangUp(reason) {
   if (mode === 'idle') return;
-  const c = call; detach(); if (c) c.end('user');
+  const c = call;
+  if (c) {
+    const s = connectedAt ? (performance.now() - connectedAt) / 1000 : 0;
+    track('call-ended', { reason, secs: s < 15 ? '<15' : s < 60 ? '15-60' : s < 120 ? '60-120' : '120+' });
+  }
+  detach(); if (c) c.end('user');
   mode = 'idle'; oTurn++; if (synth) synth.cancel();
   stopTimer(); clearTimeout(sayTimer); pending = [];
   panel.classList.remove('live'); setVisual('idle');

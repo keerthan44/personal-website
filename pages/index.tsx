@@ -26,6 +26,12 @@ const index: React.FC<indexProps> = ({}) => {
   let lscroll: any;
 
   React.useEffect(() => {
+    try {
+      const body = JSON.stringify({ e: "view" });
+      if (!navigator.sendBeacon || !navigator.sendBeacon("/api/track", new Blob([body], { type: "text/plain" }))) {
+        fetch("/api/track", { method: "POST", body, keepalive: true }).catch(() => {});
+      }
+    } catch (e) {}
     ReactGa.initialize("UA-177100391-3");
     ReactGa.pageview(window.location.pathname + window.location.search);
 
