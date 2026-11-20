@@ -2,6 +2,7 @@
 // Plain ES module, no bundler. Every browser global is injectable through `opts`
 // so the engine can be tested in Node with fakes.
 import { Player } from './playback.mjs';
+import { cleanSpoken } from './captions.mjs';
 
 const AGENT_URL = 'wss://agent.deepgram.com/v1/agent/converse';
 const CAP_MESSAGE = "That's our three minutes. Thanks for calling! You'll find Keerthan's contact details at the bottom of the page.";
@@ -287,7 +288,8 @@ export function createVoiceCall(opts = {}) {
         return;
       case 'ConversationText': {
         const role = msg.role === 'user' ? 'user' : 'agent';
-        emit('text', { role, text: msg.content || '' });
+        const raw = msg.content || '';
+        emit('text', { role, text: role === 'agent' ? cleanSpoken(raw) : raw });
         if (role === 'user') {
           beginTurn();
           if (!player.busy) setState('thinking');

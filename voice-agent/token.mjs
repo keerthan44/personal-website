@@ -32,11 +32,12 @@ export function createTokenHandler({ fetchImpl, env, now }) {
     const pre = envName(env);
     const t = now();
     const day = `${pre}:day:${dayKey(t)}`;
-    const salt = env.ANALYTICS_SALT || 'ipcap';
-    const ipKey = `${pre}:ipcap:${createHash('sha256').update(ip + salt).digest('hex').slice(0, 16)}`;
+    // No salt in production: don't hash IPs with a constant, skip the shared per-IP cap.
+    const salt = env.ANALYTICS_SALT || (pre === 'production' ? '' : 'ipcap');
+    const ipKey = salt ? `${pre}:ipcap:${createHash('sha256').update(ip + salt).digest('hex').slice(0, 16)}` : null;
     let out;
     try {
-      out = await settle(redis.pipeline([['HGET', day, 'token'], ['INCR', ipKey], ['TTL', ipKey]]), REDIS_TIMEOUT_MS);
+      out = await settle(redis.pipeline(ipKey ? [['HGET', day, 'token'], ['INCR', ipKey], ['TTL', ipKey]] : [['HGET', day, 'token']]), REDIS_TIMEOUT_MS);
     } catch { return null; }
     if (!Array.isArray(out)) return null;
     const val = (i) => (out[i] && out[i].result != null ? Number(out[i].result) : NaN);

@@ -227,6 +227,17 @@ test('per-IP hourly cap in Redis: 9th call in an hour -> 429 rate_limited', asyn
   assert.strictEqual(o.statusCode, 200);
 });
 
+test('production without ANALYTICS_SALT skips the Redis per-IP cap', async () => {
+  const s = capSetup({ VERCEL_ENV: 'production', ANALYTICS_SALT: '' });
+  for (let i = 0; i < 10; i++) {
+    const r = mkRes();
+    await s.handler(mkReq(), r);
+    assert.strictEqual(r.statusCode, 200, `call ${i + 1}`);
+    s.clock.advance(20_000);
+  }
+  assert.strictEqual(s.redis.strs.size, 0, 'no ipcap key written');
+});
+
 test('VOICE_IP_HOURLY_CAP overrides the per-IP cap', async () => {
   const s = capSetup({ VOICE_IP_HOURLY_CAP: '2' });
   for (let i = 0; i < 2; i++) { const r = mkRes(); await s.handler(mkReq(), r); assert.strictEqual(r.statusCode, 200); }

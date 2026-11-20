@@ -214,6 +214,14 @@ test('ConversationText becomes text events with user/agent roles and drives stat
   s.call.end();
 });
 
+test('agent text has pronunciation markup stripped; user text untouched', async () => {
+  const s = await connected();
+  s.ws.srv({ type: 'ConversationText', role: 'assistant', content: 'Hi \\{"word": "Keerthan", "pronounce": "ˈkiːɹθən"\\}!' });
+  s.ws.srv({ type: 'ConversationText', role: 'user', content: 'a \\{b\\}' });
+  assert.deepStrictEqual(s.of('text'), [{ role: 'agent', text: 'Hi Keerthan!' }, { role: 'user', text: 'a \\{b\\}' }]);
+  s.call.end();
+});
+
 test('player drained after AgentAudioDone returns to listening', async () => {
   const s = await connected();
   s.ws.bin(new Int16Array(4800).buffer); // 200 ms

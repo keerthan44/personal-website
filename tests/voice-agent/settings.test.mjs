@@ -11,7 +11,10 @@ test('settings shape', () => {
   assert.strictEqual(s.agent.listen.provider.model, 'flux-general-en');
   assert.strictEqual(s.agent.think[0].provider.model, 'gpt-4.1-mini');
   assert.strictEqual(s.agent.think[1].provider.model, 'claude-haiku-4-5');
-  assert.strictEqual(s.agent.speak.provider.model, 'flux-miles-en');
+  assert.strictEqual(s.agent.speak.provider.model, 'flux-haley-en');
+  assert.strictEqual(s.agent.speak.provider.version, 'v2');
+  assert.ok(!('speed' in s.agent.speak.provider));
+  assert.ok(s.agent.greeting.includes('\\{"word": "Keerthan", "pronounce": "ˈkiːɹθən"\\}'));
   assert.ok(s.agent.greeting.length > 0);
   assert.strictEqual(s.experimental, true);
   assert.deepStrictEqual(s.tags, ['portfolio']);
@@ -35,4 +38,11 @@ test('prompt rules', () => {
   assert.ok(prompt.includes('third person'));
   assert.ok(prompt.includes('Decline off-topic'));
   assert.ok(prompt.includes('Never claim to be Keerthan'));
+});
+
+test('prompt has pronunciation section with exact markup', () => {
+  assert.ok(prompt.includes('PRONUNCIATION'));
+  assert.ok(prompt.includes('Keerthan → \\{"word": "Keerthan", "pronounce": "ˈkiːɹθən"\\}'));
+  assert.ok(prompt.includes('Never explain or mention this formatting'));
+  assert.ok(prompt.includes('Keerthan Gopalakrishnan'));
 });

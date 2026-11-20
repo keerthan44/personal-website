@@ -1,13 +1,15 @@
 import { RESUME } from './resume.mjs';
 import { buildPrompt } from './prompt.mjs';
+import { pronounceAll } from './pronunciations.mjs';
 
 export const KEYTERMS = [
   'Keerthan', 'Gopalakrishnan', 'LiveKit', 'Deepgram', 'Kraftx', 'IntellifyAi',
   'Blue Machines', 'BigBasket', 'IoTReady', 'Neoscale', 'PES University', 'DuckDB', 'Temporal',
 ];
 
-export const GREETING =
-  "Hi, I'm Keerthan's AI agent. Ask me anything about his work: what he's built, where he's worked, or whether he's open to new roles.";
+export const GREETING = pronounceAll(
+  "Hi, I'm Keerthan's AI agent. Ask me anything about his work: what he's built, where he's worked, or whether he's open to new roles.",
+);
 
 export function buildSettings() {
   const prompt = buildPrompt(RESUME);
@@ -36,7 +38,7 @@ export function buildSettings() {
         { provider: { type: 'open_ai', model: 'gpt-4.1-mini', temperature: 0.4 }, prompt },
         { provider: { type: 'anthropic', model: 'claude-haiku-4-5', temperature: 0.4 }, prompt },
       ],
-      speak: { provider: { type: 'deepgram', version: 'v2', model: 'flux-miles-en' } },
+      speak: { provider: { type: 'deepgram', version: 'v2', model: 'flux-haley-en' } },
       greeting: GREETING,
     },
   };

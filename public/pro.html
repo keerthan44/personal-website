@@ -903,11 +903,11 @@ function hangUp(reason) {
   stopTimer(); clearTimeout(sayTimer); pending = [];
   panel.classList.remove('live'); setVisual('idle');
   talk.setAttribute('aria-expanded', 'false');
-  // Collapse first, then hand the space back to the Talk pill and move focus there (no scrolling).
+  // Focus moves to Talk as the collapse begins so it never rests on the inert End button.
+  talk.hidden = false; talk.focus({ preventScroll: true });
   closePanel(() => {
     if (mode !== 'idle') return;                   // a new call started meanwhile
     showEndedPill(endedSecs);
-    talk.hidden = false; talk.focus({ preventScroll: true });
   });
   setStatus(reason === 'cap' ? 'Call ended at the 3 minute limit' : STATUS.ended);
 }
