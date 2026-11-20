@@ -34,8 +34,8 @@ function makeWS() {
 function makeWorkletNodeClass() {
   const nodes = [];
   class FakeNode {
-    constructor(ctx, name, options) { this.ctx = ctx; this.name = name; this.options = options; this.port = { onmessage: null, close() {} }; this.disconnected = 0; nodes.push(this); }
-    connect() {} disconnect() { this.disconnected++; }
+    constructor(ctx, name, options) { this.ctx = ctx; this.name = name; this.options = options; this.port = { onmessage: null, close() {} }; this.disconnected = 0; this.connectedTo = []; nodes.push(this); }
+    connect(n) { this.connectedTo.push(n); return n; } disconnect() { this.disconnected++; }
     emit(level = 0.1, n = 882) { this.port.onmessage?.({ data: { pcm: new Int16Array(n).buffer, level } }); }
   }
   FakeNode.nodes = nodes;
@@ -170,6 +170,21 @@ test('levels.you follows the mic and decays to ~0 within 300 ms; levels.agent re
   s.call.setMicEnabled(false);
   assert.strictEqual(s.call.levels.you, 0);
   s.call.end();
+});
+
+test('capture worklet is pulled through a zero-gain node into the capture destination (Safari)', async () => {
+  const s = await connected();
+  const capture = s.Ctx.instances.find((c) => c.sampleRate === 44100);
+  const node = s.Node.nodes[0];
+  assert.strictEqual(node.options.numberOfOutputs, 1);
+  assert.deepStrictEqual(node.options.outputChannelCount, [1]);
+  assert.strictEqual(node.connectedTo.length, 1);
+  const sink = node.connectedTo[0];
+  assert.strictEqual(sink.gain.value, 0);
+  assert.deepStrictEqual(sink.connectedTo, [capture.destination]);
+  s.call.end();
+  assert.strictEqual(sink.disconnected, 1, 'sink gain disconnected on end');
+  assert.strictEqual(node.disconnected, 1);
 });
 
 test('UserStartedSpeaking while audio is queued flushes the player and enters interrupted', async () => {

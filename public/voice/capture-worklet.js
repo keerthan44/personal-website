@@ -1,5 +1,7 @@
 // AudioWorkletProcessor 'pcm-capture': mic Float32 → Int16 PCM in 20 ms chunks.
 // Posts {pcm: ArrayBuffer, level: number} with the buffer transferred.
+// It has one output only so the graph can pull it to the destination (Safari);
+// the output is never written, so it stays silent.
 // The conversion math mirrors floatToInt16/rms in pcm.mjs (worklets can't import
 // ES modules portably, so it is duplicated here).
 

@@ -56,6 +56,7 @@ export function createVoiceCall(opts = {}) {
   let micStream = null;
   let micSource = null;
   let micNode = null;
+  let micSink = null;
   let micAvailable = false;
   let micEnabled = true;
 
@@ -151,8 +152,14 @@ export function createVoiceCall(opts = {}) {
       await captureCtx.audioWorklet.addModule(String(workletUrl));
       if (ended) return; // end() already released the stream
       micSource = captureCtx.createMediaStreamSource(stream);
-      micNode = new AudioWorkletNodeImpl(captureCtx, 'pcm-capture', { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 1 });
+      micNode = new AudioWorkletNodeImpl(captureCtx, 'pcm-capture', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1], channelCount: 1 });
       micNode.port.onmessage = onPcm;
+      // WebKit only renders nodes that reach the destination, so pull the worklet
+      // through a muted gain. The worklet leaves its output silent anyway.
+      micSink = captureCtx.createGain();
+      micSink.gain.value = 0;
+      micNode.connect(micSink);
+      micSink.connect(captureCtx.destination);
       micSource.connect(micNode);
     } catch (err) {
       if (ended) return;
@@ -172,6 +179,10 @@ export function createVoiceCall(opts = {}) {
       micNode.port.onmessage = null;
       try { micNode.disconnect(); } catch { /* ignore */ }
       micNode = null;
+    }
+    if (micSink) {
+      try { micSink.disconnect(); } catch { /* ignore */ }
+      micSink = null;
     }
     if (micSource) {
       try { micSource.disconnect(); } catch { /* ignore */ }
