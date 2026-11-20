@@ -193,17 +193,42 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
 .call.ringing .ava::before, .call.ringing .ava::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--accent); animation: ring 1.6s ease-out infinite; }
 .call.ringing .ava::after { animation-delay: 0.5s; }
 @keyframes ring { from { transform: scale(1); opacity: 0.8; } to { transform: scale(1.9); opacity: 0; } }
-.call.live .ava i { animation: wv 0.9s ease-in-out infinite; } .call.live .ava i:nth-child(2) { animation-delay: .15s; } .call.live .ava i:nth-child(3) { animation-delay: .3s; }
+.call.talking .ava i { animation: wv 1.3s ease-in-out infinite; } .call.talking .ava i:nth-child(2) { animation-delay: .2s; } .call.talking .ava i:nth-child(3) { animation-delay: .4s; }
 @keyframes wv { 50% { transform: scaleY(0.4); } }
 .call h2 { margin: 0; font-size: 1rem; font-weight: 600; letter-spacing: -0.01em; }
 .call .sub { margin: 2px 0 0; color: var(--muted); font-size: 0.85rem; }
 .call .timer { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
-.call .you { margin: 14px 0 0; color: var(--muted); font-size: 0.85rem; font-family: var(--mono); }
-.call .cap { margin: 8px 0 0; min-height: 0; font-size: 1rem; line-height: 1.45; color: var(--fg); }
-.call .cap:empty { display: none; }
-.call .qs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
-.call .qs button { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--fg); font: 500 0.85rem var(--display); cursor: pointer; }
+.call .sub { display: flex; align-items: center; gap: 8px; }
+.call .dot { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--muted); transition: background-color 0.6s ease, box-shadow 0.6s ease; }
+.call[data-state="listening"] .dot, .call[data-state="interrupted"] .dot { background: #7fb2ff; box-shadow: 0 0 0 4px rgba(127, 178, 255, 0.16); }
+.call[data-state="thinking"] .dot { background: var(--fg); animation: breathe 2.4s ease-in-out infinite; }
+.call[data-state="speaking"] .dot { background: var(--accent); box-shadow: 0 0 0 4px rgba(255, 122, 77, 0.18); }
+@keyframes breathe { 50% { opacity: 0.35; } }
+.call .timer.low { color: var(--accent); }
+.call .alert { margin: 14px 0 0; padding: 10px 14px; border: 1px solid rgba(255, 122, 77, 0.5); border-radius: 14px; background: rgba(255, 122, 77, 0.08); color: var(--fg); font-size: 0.9rem; line-height: 1.4; }
+.call .alert:empty { margin: 0; padding: 0; border: 0; }
+.call .log { display: grid; gap: 10px; margin-top: 14px; max-height: 220px; overflow-y: auto; overscroll-behavior: contain; padding: 2px 6px 2px 0; border-radius: 8px; }
+.call .log p { margin: 0; font-size: 0.95rem; line-height: 1.45; color: var(--fg); animation: rise 0.6s cubic-bezier(.2,.7,.2,1) both; }
+.call .log p.u { color: #c9cdd4; }
+.call .log b { font: 500 0.8rem var(--mono); letter-spacing: 0.02em; margin-right: 6px; }
+.call .log .u b { color: #7fb2ff; }
+.call .log .a b { color: var(--accent); }
+.call .log .lat { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+.call .qs-l { margin: 16px 0 0; color: var(--muted); }
+.call .qs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.call .qs button { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid #6b7080; background: transparent; color: var(--fg); font: 500 0.85rem var(--display); cursor: pointer; transition: border-color 0.3s ease; }
 .call .qs button:hover { border-color: var(--accent); }
+.call .ask { margin-top: 16px; }
+.call .ask label { display: block; margin-bottom: 6px; color: var(--muted); }
+.call .ask-row { display: flex; gap: 8px; }
+.call .ask input { flex: 1; min-width: 0; min-height: 44px; padding: 0 16px; border: 1px solid #6b7080; border-radius: 999px; background: rgba(14, 15, 18, 0.6); color: var(--fg); font: 400 0.95rem var(--display); transition: border-color 0.3s ease; }
+.call .ask input:hover { border-color: var(--muted); }
+.call .send { min-height: 44px; min-width: 76px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 0.9rem var(--display); cursor: pointer; transition: background-color 0.3s ease; }
+.call .send:hover { background: var(--accent); }
+.call .ask input:focus-visible, .call .send:focus-visible, .call .qs button:focus-visible, .call-act .btn:focus-visible { border-radius: 999px; }
+.call-act .btn.mic { flex: 0 0 auto; padding: 0 20px; border-color: #6b7080; }
+.call-act .btn.mic[aria-pressed="false"] { color: var(--muted); }
 .call-act { display: flex; gap: 8px; margin-top: 16px; }
 .call-act .btn { flex: 1; justify-content: center; min-height: 46px; }
 .btn.answer { background: #3fb871; color: #08130c; }
@@ -213,7 +238,7 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
 .call .fine { margin: 12px 0 0; color: var(--muted); font-size: 0.78rem; }
 
 .no-motion .js .reveal, .no-motion .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
-@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .away svg, .talk .wv i, .call .ava::before, .call .ava::after, .call.live .ava i { animation: none !important; } .card:hover { transform: none; } }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .away svg, .talk .wv i, .call .ava::before, .call .ava::after, .call.talking .ava i, .call .dot, .call .log p { animation: none !important; } .card:hover { transform: none; } }
 
 /* small photo next to the name in the top bar */
 .brand { display: inline-flex; align-items: center; gap: 10px; }
@@ -251,20 +276,27 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
           <a class="btn ghost" href="#contact">Get in touch</a>
         </div>
         <button type="button" class="talk" id="talkBtn" aria-expanded="false" aria-controls="call"><span class="wv" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Talk to my AI agent <small>it answers out loud</small></button>
+        <p class="sr" id="callState" role="status"></p>
         <section class="call" id="call" aria-labelledby="callH" hidden>
           <div class="call-top">
             <div class="ava" aria-hidden="true"><span><i></i><i></i><i></i></span></div>
-            <div><h2 id="callH">Keerthan's AI agent</h2><p class="sub" id="callState" role="status">Connecting</p></div>
-            <span class="timer mono" id="callTime" hidden></span>
+            <div><h2 id="callH">Keerthan's AI agent</h2><p class="sub" aria-hidden="true"><span class="dot"></span><span id="callStateVis">Connecting</span></p></div>
+            <span class="timer mono" id="callTime" aria-hidden="true" hidden></span>
           </div>
-          <p class="you" id="callYou" hidden></p>
-          <p class="cap" id="callCap" aria-live="polite"></p>
-          <div class="qs" id="callQs" role="group" aria-label="Ask a question" hidden></div>
+          <p class="alert" id="callAlert" role="alert"></p>
+          <div class="log" id="callLog" role="log" aria-live="off" aria-label="Transcript" tabindex="0" hidden></div>
+          <p class="sr" id="callSay" aria-live="polite" aria-atomic="true"></p>
+          <p class="qs-l mono" id="callQsL">Try asking</p>
+          <div class="qs" id="callQs" role="group" aria-labelledby="callQsL"></div>
+          <form class="ask" id="callAsk" autocomplete="off">
+            <label class="mono" for="callText">Type a question</label>
+            <div class="ask-row"><input id="callText" name="q" type="text" maxlength="300" enterkeyhint="send"><button type="submit" class="send">Send</button></div>
+          </form>
           <div class="call-act">
-              <button type="button" class="btn ghost" id="callMic" aria-pressed="false" hidden>Ask out loud</button>
-            <button type="button" class="btn end" id="callEnd" hidden>End call</button>
+            <button type="button" class="btn ghost mic" id="callMic" aria-pressed="true" hidden><span class="sr">Microphone</span><span aria-hidden="true" id="callMicT">Mic on</span></button>
+            <button type="button" class="btn end" id="callEnd">End call</button>
           </div>
-          <p class="fine">It speaks out loud. Answers come only from his résumé, max 3 minutes.</p>
+          <p class="fine">It talks out loud and listens through your microphone, or you can type. Answers come only from his résumé, max 3 minutes.</p>
         </section>
         <p class="local">It's <b id="clock">--:--</b> where I am, <span id="doing">probably fixing a customer issue.</span></p>
       </div>
@@ -437,82 +469,6 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
   document.querySelectorAll('.reveal').forEach(el => io ? io.observe(el) : el.classList.add('in'));
 
   /* =========================================================
-     The hook: the portrait takes a call. Speech is spoken with the
-     browser's own voice; answers come only from the résumé. The live
-     version swaps this for a LiveKit agent with the same call cap.
-     ========================================================= */
-  const CAP = 180; // seconds per call (configurable)
-  const call = $('call'), capEl = $('callCap'), stEl = $('callState'), timeEl = $('callTime'), qs = $('callQs');
-  const INTENTS = [
-    { q: 'Is he open to roles?', k: /open|hir|availab|looking|new role|join/i, a: "Yes, he's open to new roles, especially on teams building hard things with voice or AI. The quickest route is booking a time at the bottom of this page." },
-    { q: 'What does he do?', k: /what.*(do|work)|about|who|role|job|experience/i, a: 'Keerthan is a software engineer who builds real-time voice AI. Most recently he was a forward deployed engineer at Blue Machines AI, where his calling workflows reached four million people a day.' },
-    { q: "What's he built?", k: /buil|project|ship|made|portfolio/i, a: "A few highlights. Voice agents that handle around two hundred US healthcare insurance calls a day. A speaking practice platform with several AI agents in one room, shipped in ten days. And BigBasket's driver invoicing app, built in three weeks and used by over a hundred thousand people." },
-    { q: 'How fast are his agents?', k: /fast|laten|speed|quick|slow/i, a: 'Under one and a half seconds from when you stop talking to when the agent answers, on live phone calls. He gets there by measuring every hop: speech to text, the model, and the voice.' },
-    { q: "What's his stack?", k: /stack|tech|language|tool|python|skill|framework/i, a: 'Python, TypeScript and Rust. For voice, LiveKit, Deepgram and ElevenLabs. Temporal and Kafka for workflows, and Kubernetes on AWS or GCP for infrastructure.' },
-    { q: 'How do I reach him?', k: /contact|reach|email|meet|book|talk to him|call him/i, a: 'Scroll to the bottom of this page. You can book a time on his calendar or email him directly.' }
-  ];
-  const HELLO = "Hi, thanks for calling. I'm Keerthan's AI agent. I can answer questions about his work for up to three minutes. What would you like to know?";
-  const MISS = "I only know what's in Keerthan's résumé, so I'll pass on that one. Try asking what he's built, or how to reach him.";
-  const BYE = "That's our three minutes. Thanks for calling, and you'll find his calendar at the bottom of the page.";
-  let turn = 0, live = false, speaking = false, pulse = 0, t0 = 0, callTick = 0, rec = null, voice = null;
-  const synth = 'speechSynthesis' in window ? speechSynthesis : null;
-  function pickVoice() {
-    if (!synth) return; const vs = synth.getVoices().filter(v => /^en(-|_)/i.test(v.lang));
-    voice = vs.find(v => /Google UK English Male|Daniel|Alex|Aaron|Guy/i.test(v.name)) || vs.find(v => /en-US/i.test(v.lang)) || vs[0] || null;
-  }
-  if (synth) { pickVoice(); synth.addEventListener && synth.addEventListener('voiceschanged', pickVoice); }
-  const mmss = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
-  function say(text, then) {
-    if (synth) synth.cancel();
-    const id = ++turn;
-    capEl.textContent = text; stEl.textContent = 'Agent speaking'; speaking = true; pulse = 1;
-    const done = () => { if (id !== turn) return; if (!live && text !== BYE) return; speaking = false; if (live) stEl.textContent = 'Your turn'; then && then(); };
-    if (!synth) { setTimeout(done, Math.max(1800, text.length * 55)); return; }
-    const u = new SpeechSynthesisUtterance(text); if (voice) u.voice = voice; u.rate = 1.04; u.pitch = 1;
-    u.onboundary = () => { pulse = 1; }; u.onend = done; u.onerror = done;
-    synth.speak(u);
-  }
-  function ask(text) {
-    if (!live) return;
-    const hit = INTENTS.find(i => i.k.test(text));
-    $('callYou').textContent = 'You: ' + text; $('callYou').hidden = false;
-    say(hit ? hit.a : MISS);
-  }
-  function answer() {
-    call.hidden = false; $('talkBtn').hidden = true; $('talkBtn').setAttribute('aria-expanded', 'true');
-    call.classList.add('live'); live = true; t0 = Date.now();
-    $('callEnd').hidden = false; qs.hidden = false; timeEl.hidden = false; $('callYou').hidden = true;
-    if (rec) $('callMic').hidden = false;
-    timeEl.textContent = '0:00 / ' + mmss(CAP);
-    callTick = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); timeEl.textContent = mmss(Math.min(s, CAP)) + ' / ' + mmss(CAP); if (s >= CAP) { live = false; say(BYE, () => hang('Call ended at the 3 minute limit')); } }, 500);
-    say(HELLO);
-    $('callEnd').focus({ preventScroll: true });
-  }
-  function hang(msg) {
-    turn++; live = false; speaking = false; clearInterval(callTick); if (synth) synth.cancel(); if (rec) try { rec.abort(); } catch (e) {}
-    call.classList.remove('live'); qs.hidden = true; $('callMic').hidden = true; $('callEnd').hidden = true;
-    stEl.textContent = msg || 'Call ended'; capEl.textContent = ''; $('callYou').hidden = true;
-    call.hidden = true; const b = $('talkBtn'); b.hidden = false; b.setAttribute('aria-expanded', 'false'); b.focus({ preventScroll: true });
-  }
-  INTENTS.forEach(i => { const b = document.createElement('button'); b.type = 'button'; b.textContent = i.q; b.addEventListener('click', () => ask(i.q)); qs.appendChild(b); });
-  $('talkBtn').addEventListener('click', answer);
-  $('callEnd').addEventListener('click', () => hang());
-  // optional: ask out loud (browser speech recognition, Chrome/Safari)
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (SR) {
-    rec = new SR(); rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 1;
-    rec.onresult = e => { const t = e.results[0][0].transcript; ask(t); };
-    rec.onend = () => { $('callMic').setAttribute('aria-pressed', 'false'); $('callMic').textContent = 'Ask out loud'; };
-    rec.onerror = () => { stEl.textContent = live ? "Didn't catch that. Tap a question instead." : stEl.textContent; };
-    $('callMic').addEventListener('click', () => {
-      if (synth) synth.cancel(); speaking = false;
-      if ($('callMic').getAttribute('aria-pressed') === 'true') { rec.stop(); return; }
-      try { rec.start(); $('callMic').setAttribute('aria-pressed', 'true'); $('callMic').textContent = 'Listening… tap to stop'; stEl.textContent = 'Listening'; } catch (e) {}
-    });
-  }
-
-
-  /* =========================================================
      3D cube portrait in the hero (fades as you scroll past)
      ========================================================= */
   if (!window.THREE) { $('stage').hidden = true; return; }
@@ -598,57 +554,8 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
   });
   const cubes = new THREE.Mesh(cgeo, cmat); cubes.frustumCulled = false; group.add(cubes);
 
-  /* call state for the hero visual: visitor speaking (blue), thinking, agent speaking (orange),
-     ringing and connected. Answers wait a short "Thinking" beat before they are spoken. */
-  let youPulse = 0, thinkUntil = 0, liveAt = 0, wasLive = false, lapT0 = 0, lapEnd = -1, lastNow = performance.now();
-  const sayNow = say;
-  say = function (text, then) {
-    if (!live || text === HELLO || text === BYE) return sayNow(text, then);
-    if (synth) synth.cancel(); speaking = false;
-    youPulse = 1; const now = performance.now(); thinkUntil = now + 900; lapT0 = now; lapEnd = -1;
-    stEl.textContent = 'Thinking'; capEl.textContent = '';
-    setTimeout(() => { if (!live) return; lapEnd = performance.now(); youPulse = 0; sayNow(text, then); }, 900);
-  };
-  (function stateLoop() {
-    const now = performance.now(), dt = Math.min(0.05, (now - lastNow) / 1000); lastNow = now;
-    if (live && !wasLive) liveAt = now; wasLive = live; if (!live) lapT0 = 0;
-    youPulse *= 0.98;
-    const ease = (u, v, k) => { u.value += (v - u.value) * k; };
-    ease(cu.uYou, Math.min(1, youPulse), 0.04);
-    ease(cu.uThink, live && now < thinkUntil ? 1 : 0, 0.05);
-    cu.uSpin.value += dt * 0.5 * cu.uThink.value;
-    ease(cu.uCall, live ? 1 : 0, 0.025);
-    ease(cu.uRing, live && now - liveAt < 2200 ? 1 : 0, 0.05);
-    cu.uLap.value = lapT0 ? Math.min(1, ((lapEnd > 0 ? lapEnd : now) - lapT0) / 1500) : 0;
-    ease(cu.uLapOn, live && lapT0 ? 1 : 0, 0.1);
-    if (!reduce) requestAnimationFrame(stateLoop);
-  })();
-  if (location.hostname === '127.0.0.1') window.__hero = { you() { youPulse = 1; }, cu };
-
-  /* "Ask out loud" through claude.ai dictation (the page gets words, never audio).
-     Talking over the agent cuts it off and turns the visual blue. */
-  if (window.claude && claude.use) claude.use('dictation').then(d => {
-    if (!d) return;
-    const old = $('callMic'), mic = old.cloneNode(true); old.replaceWith(mic);
-    rec = { abort() { d.stop().catch(() => {}); }, stop() { d.stop().catch(() => {}); }, start() {} };
-    if (live) mic.hidden = false;
-    mic.addEventListener('click', () => {
-      if (synth) synth.cancel(); speaking = false; youPulse = 1;
-      if (d.active()) { d.stop().catch(() => {}); return; }
-      d.start().catch(e => {
-        if (e && (e.code === 'not_granted' || e.code === 'unavailable')) { mic.hidden = true; rec = null; }
-        if (live) stEl.textContent = "Didn't catch that. Tap a question instead.";
-      });
-    });
-    d.onState(({ state }) => {
-      const on = state !== 'idle';
-      mic.setAttribute('aria-pressed', on ? 'true' : 'false');
-      mic.textContent = on ? 'Listening… tap to stop' : 'Ask out loud';
-      if (state === 'listening' && live) stEl.textContent = 'Listening';
-    });
-    d.onPartial(({ text }) => { if (text) { youPulse = 1; if (speaking && synth) { synth.cancel(); speaking = false; } } });
-    d.onFinal(({ text }) => { youPulse = 1; const t = text.trim(); if (t && live) { d.stop().catch(() => {}); ask(t); } });
-  });
+  /* the call (module script below) drives the call-state uniforms through this handle */
+  window.__orb = { cu, reduce, render: () => requestAnimationFrame(frame) };
 
   // pointer -> portrait-local coordinates
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(), hit = new THREE.Vector3();
@@ -689,10 +596,6 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
     const k = 2 * 6.4 * Math.tan(19 * Math.PI / 180) / innerHeight;
     group.position.set(wide ? 1.85 : 0, wide ? -0.05 : (innerHeight * k / 2 - 76 * k - 0.86 + scrollY * k), 0); group.scale.setScalar(wide ? 0.95 : 0.5);
     group.rotation.y = px * 0.42 + (reduce ? 0 : 0.06 * Math.sin(t * 0.35)); group.rotation.x = py * 0.3;
-    // voice ripples roll out of the portrait while the agent talks
-    pulse *= 0.93;
-    const tl = speaking && !reduce ? 0.85 : 0;
-    cu.uTalk.value += (tl - cu.uTalk.value) * 0.03;
     if (cubes.visible) renderer.render(scene, camera); else if (visible) renderer.clear();
     visible = cubes.visible;
     if (!reduce) requestAnimationFrame(frame);
@@ -700,6 +603,272 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
   if (reduce) { addEventListener('scroll', () => requestAnimationFrame(frame), { passive: true }); addEventListener('resize', () => requestAnimationFrame(frame)); addEventListener('pointermove', () => requestAnimationFrame(frame)); }
   frame();
 })();
+</script>
+<script type="module">
+/* =========================================================
+   The hook: the portrait takes a call. A real Deepgram voice agent
+   (public/voice/agent-client.mjs) answers from the résumé, with live
+   captions, typed questions and a 3 minute cap. If the agent can't be
+   reached, the panel falls back to scripted offline answers.
+   ========================================================= */
+import { createVoiceCall } from '/voice/agent-client.mjs';
+
+const $ = id => document.getElementById(id);
+const panel = $('call'), talk = $('talkBtn'), endBtn = $('callEnd'), micBtn = $('callMic'), micT = $('callMicT');
+const stVis = $('callStateVis'), stSr = $('callState'), alertEl = $('callAlert'), logEl = $('callLog'), sayEl = $('callSay');
+const qs = $('callQs'), qsL = $('callQsL'), form = $('callAsk'), input = $('callText'), timeEl = $('callTime');
+
+const CAP = 180;
+const STATUS = { connecting: 'Connecting', listening: 'Listening', thinking: 'Thinking', speaking: 'Agent speaking', interrupted: "Go ahead, I'm listening", ended: 'Call ended' };
+const OFFLINE_STATUS = 'Offline answers';
+const ERR_OFFLINE = 'The agent is offline right now.';
+const ERR_RATE = 'Too many calls right now. Try again in a minute.';
+const MIC_BLOCKED = 'Microphone blocked. You can still type your questions.';
+
+/* scripted offline answers, used only after the live agent reports an error */
+const INTENTS = [
+  { q: 'Is he open to roles?', k: /open|hir|availab|looking|new role|join/i, a: "Yes, he's open to new roles, especially on teams building hard things with voice or AI. The quickest route is booking a time at the bottom of this page." },
+  { q: 'What does he do?', k: /what.*(do|work)|about|who|role|job|experience/i, a: 'Keerthan is a software engineer who builds real-time voice AI. Most recently he was a forward deployed engineer at Blue Machines AI, where his calling workflows reached four million people a day.' },
+  { q: "What's he built?", k: /buil|project|ship|made|portfolio/i, a: "A few highlights. Voice agents that handle around two hundred US healthcare insurance calls a day. A speaking practice platform with several AI agents in one room, shipped in ten days. And BigBasket's driver invoicing app, built in three weeks and used by over a hundred thousand people." },
+  { q: 'How fast are his agents?', k: /fast|laten|speed|quick|slow/i, a: 'Under one and a half seconds from when you stop talking to when the agent answers, on live phone calls. He gets there by measuring every hop: speech to text, the model, and the voice.' },
+  { q: "What's his stack?", k: /stack|tech|language|tool|python|skill|framework/i, a: 'Python, TypeScript and Rust. For voice, LiveKit, Deepgram and ElevenLabs. Temporal and Kafka for workflows, and Kubernetes on AWS or GCP for infrastructure.' },
+  { q: 'How do I reach him?', k: /contact|reach|email|meet|book|talk to him|call him/i, a: 'Scroll to the bottom of this page. You can book a time on his calendar or email him directly.' }
+];
+const MISS = "I only know what's in Keerthan's résumé, so I'll pass on that one. Try asking what he's built, or how to reach him.";
+const synth = 'speechSynthesis' in window ? speechSynthesis : null;
+let voice = null;
+function pickVoice() {
+  if (!synth) return; const vs = synth.getVoices().filter(v => /^en(-|_)/i.test(v.lang));
+  voice = vs.find(v => /Google UK English Male|Daniel|Alex|Aaron|Guy/i.test(v.name)) || vs.find(v => /en-US/i.test(v.lang)) || vs[0] || null;
+}
+if (synth) { pickVoice(); synth.addEventListener && synth.addEventListener('voiceschanged', pickVoice); }
+
+let mode = 'idle';          // 'idle' | 'live' | 'offline'
+let call = null, unsubs = [];
+let vstate = 'idle';        // drives the orb and the status dot
+let micOn = true, connectedAt = 0, t0 = 0, tickId = 0, oTurn = 0;
+let pending = [], recent = [], alerted = new Set();
+let agentEntry = null, agentText = '', lastAgent = null, pendingLat = null, userSeen = false, sayTimer = 0;
+const mmss = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+
+/* ---------- status: visual now, screen readers after 400 ms of quiet ---------- */
+let srTimer = 0, srHold = 0;
+function setStatus(text) {
+  stVis.textContent = text;
+  clearTimeout(srTimer);
+  srTimer = setTimeout(() => { if (stSr.textContent !== text) stSr.textContent = text; }, Math.max(400, srHold - performance.now()));
+}
+function announceNow(text) { clearTimeout(srTimer); stSr.textContent = text; srHold = performance.now() + 2500; }
+function showAlert(key, text) {
+  if (alerted.has(key)) return; alerted.add(key);
+  alertEl.textContent = text;
+}
+function setVisual(s) {
+  vstate = s;
+  panel.dataset.state = s === 'idle' ? (mode === 'offline' ? 'offline' : '') : s;
+  panel.classList.toggle('ringing', s === 'connecting');
+  panel.classList.toggle('talking', s === 'speaking');
+  kickOrb();
+}
+
+/* ---------- captions ---------- */
+function logEntry(role, text) {
+  const p = document.createElement('p'), b = document.createElement('b'), t = document.createElement('span');
+  p.className = role === 'user' ? 'u' : 'a';
+  b.textContent = role === 'user' ? 'You:' : 'Agent:'; t.textContent = text;
+  p.append(b, ' ', t);
+  logEl.append(p); logEl.hidden = false;
+  logEl.scrollTo({ top: logEl.scrollHeight, behavior: reduce() ? 'auto' : 'smooth' });
+  return p;
+}
+function userTurn(text) { logEntry('user', text); userSeen = true; agentEntry = null; agentText = ''; }
+function addLatency(p, seconds) {
+  const l = document.createElement('span'); l.className = 'lat';
+  const sr = document.createElement('span'); sr.className = 'sr'; sr.textContent = ', answered in ';
+  const dot = document.createElement('span'); dot.setAttribute('aria-hidden', 'true'); dot.textContent = '· ';
+  l.append(dot, sr, seconds.toFixed(1) + ' s');
+  p.append(' ', l); p.dataset.lat = '1';
+  if (p === lastAgent) logEl.scrollTo({ top: logEl.scrollHeight, behavior: reduce() ? 'auto' : 'smooth' });
+}
+function agentSays(text) {
+  text = text.trim(); if (!text) return;
+  if (agentEntry) { agentText += ' ' + text; agentEntry.querySelector('span').textContent = agentText; }
+  else {
+    agentText = text; agentEntry = lastAgent = logEntry('agent', text);
+    if (!userSeen) agentEntry.dataset.lat = 'skip';            // the greeting has no question to time
+    else if (pendingLat != null) addLatency(agentEntry, pendingLat);
+    pendingLat = null;
+  }
+  // one announcement per turn, with the final text
+  clearTimeout(sayTimer);
+  const full = agentText;
+  sayTimer = setTimeout(() => { sayEl.textContent = ''; requestAnimationFrame(() => { sayEl.textContent = full; }); }, 600);
+}
+function onLatency(seconds) {
+  if (typeof seconds !== 'number' || !isFinite(seconds)) return;
+  if (lastAgent && !lastAgent.dataset.lat) addLatency(lastAgent, seconds); else pendingLat = seconds;
+}
+function onUserText(text) {
+  const t = (text || '').trim(); if (!t) return;
+  const k = t.toLowerCase(), now = performance.now();
+  recent = recent.filter(r => now - r.at < 5000);
+  const i = recent.findIndex(r => r.k === k);
+  if (i >= 0) { recent.splice(i, 1); return; }           // our own typed text echoed back
+  userTurn(t);
+}
+
+/* ---------- asking: chips and the typed form ---------- */
+function ask(text) {
+  const t = (text || '').trim(); if (!t) return false;
+  if (mode === 'live') {
+    userTurn(t);
+    if (call.sendText(t)) recent.push({ k: t.toLowerCase(), at: performance.now() }); else pending.push(t);
+  } else if (mode === 'offline') { userTurn(t); offlineAnswer(t); }
+  return true;
+}
+function flushPending() {
+  const list = pending; pending = [];
+  list.forEach(t => { if (call && call.sendText(t)) recent.push({ k: t.toLowerCase(), at: performance.now() }); });
+}
+INTENTS.forEach(i => { const b = document.createElement('button'); b.type = 'button'; b.textContent = i.q; b.addEventListener('click', () => ask(i.q)); qs.appendChild(b); });
+form.addEventListener('submit', e => { e.preventDefault(); if (ask(input.value)) input.value = ''; input.focus(); });
+function syncMic() { micBtn.setAttribute('aria-pressed', micOn ? 'true' : 'false'); micT.textContent = micOn ? 'Mic on' : 'Mic off'; }
+micBtn.addEventListener('click', () => { micOn = !micOn; if (call) call.setMicEnabled(micOn); syncMic(); });
+
+/* ---------- the live call ---------- */
+function resetPanel() {
+  logEl.replaceChildren(); logEl.hidden = true; alertEl.textContent = ''; sayEl.textContent = ''; input.value = '';
+  qsL.textContent = 'Try asking'; micOn = true; syncMic(); micBtn.hidden = true;
+  timeEl.hidden = true; timeEl.classList.remove('low');
+  pending = []; recent = []; alerted = new Set(); agentEntry = lastAgent = null; agentText = ''; pendingLat = null; userSeen = false; connectedAt = 0;
+}
+function startTimer() {
+  t0 = Date.now(); timeEl.textContent = '0:00 / ' + mmss(CAP); timeEl.hidden = false;
+  tickId = setInterval(() => { const s = Math.min(CAP, Math.floor((Date.now() - t0) / 1000)); timeEl.textContent = mmss(s) + ' / ' + mmss(CAP); }, 500);
+}
+function stopTimer() { clearInterval(tickId); tickId = 0; }
+function detach() { unsubs.forEach(u => u()); unsubs = []; call = null; }
+
+function startCall() {
+  if (mode !== 'idle') return;
+  const c = createVoiceCall();
+  call = c; mode = 'live';
+  resetPanel();
+  panel.hidden = false; panel.classList.add('live');
+  talk.hidden = true; talk.setAttribute('aria-expanded', 'true');
+  setStatus(STATUS.connecting); setVisual('connecting');
+  const mine = fn => p => { if (call === c) fn(p || {}); };
+  unsubs = [
+    c.on('state', mine(({ state }) => onState(state))),
+    c.on('text', mine(({ role, text }) => role === 'user' ? onUserText(text) : agentSays(text || ''))),
+    c.on('latency', mine(({ seconds }) => onLatency(seconds))),
+    c.on('warning', mine(onWarning)),
+    c.on('mic', mine(onMic)),
+    c.on('error', mine(onError)),
+    c.on('end', mine(({ reason }) => { if (reason !== 'error') hangUp(reason); }))
+  ];
+  endBtn.focus({ preventScroll: true });
+  c.start(); // synchronously inside the click, so iOS unlocks audio
+}
+function onState(s) {
+  if (s === 'ended') return;                     // the end event closes the panel
+  if (s === 'listening' && !connectedAt) { connectedAt = performance.now(); startTimer(); flushPending(); }
+  if (s === 'interrupted' && orb) orb.cu.uTalk.value = 0;
+  setStatus(STATUS[s] || s); setVisual(s);
+}
+function onWarning() {
+  announceNow('30 seconds left');
+  timeEl.classList.add('low');
+  stVis.textContent = '30 seconds left';
+  setTimeout(() => { if (mode === 'live' && stVis.textContent === '30 seconds left') stVis.textContent = STATUS[vstate] || ''; }, 4000);
+}
+function onMic({ available }) {
+  if (available) { micBtn.hidden = false; syncMic(); return; }
+  micBtn.hidden = true;
+  showAlert('mic', MIC_BLOCKED);
+  input.focus({ preventScroll: true });
+}
+function onError(err) {
+  const kind = err.kind;
+  detach(); stopTimer();
+  showAlert(kind === 'rate_limited' ? 'rate' : 'offline', kind === 'rate_limited' ? ERR_RATE : ERR_OFFLINE);
+  enterOffline();
+}
+
+/* ---------- scripted offline fallback ---------- */
+function enterOffline() {
+  mode = 'offline'; connectedAt = 0;
+  micBtn.hidden = true; timeEl.hidden = true;
+  qsL.textContent = OFFLINE_STATUS;
+  setStatus(OFFLINE_STATUS); setVisual('idle');
+  const waiting = pending; pending = [];
+  if (waiting.length) offlineAnswer(waiting[waiting.length - 1]);
+}
+function offlineAnswer(text) {
+  const hit = INTENTS.find(i => i.k.test(text)), a = hit ? hit.a : MISS, id = ++oTurn;
+  if (synth) synth.cancel();
+  setStatus(STATUS.thinking); setVisual('thinking');
+  setTimeout(() => {
+    if (id !== oTurn || mode !== 'offline') return;
+    agentSays(a);
+    setStatus(STATUS.speaking); setVisual('speaking');
+    const done = () => { if (id !== oTurn || mode !== 'offline') return; setStatus(OFFLINE_STATUS); setVisual('idle'); };
+    if (!synth) { setTimeout(done, Math.max(1800, a.length * 55)); return; }
+    const u = new SpeechSynthesisUtterance(a); if (voice) u.voice = voice; u.rate = 1.04; u.pitch = 1;
+    u.onend = done; u.onerror = done;
+    synth.speak(u);
+  }, reduce() ? 0 : 700);
+}
+
+/* ---------- ending ---------- */
+function hangUp(reason) {
+  if (mode === 'idle') return;
+  const c = call; detach(); if (c) c.end('user');
+  mode = 'idle'; oTurn++; if (synth) synth.cancel();
+  stopTimer(); clearTimeout(sayTimer); pending = [];
+  panel.classList.remove('live'); setVisual('idle');
+  panel.hidden = true; talk.hidden = false; talk.setAttribute('aria-expanded', 'false'); talk.focus({ preventScroll: true });
+  setStatus(reason === 'cap' ? 'Call ended at the 3 minute limit' : STATUS.ended);
+}
+talk.addEventListener('click', startCall);
+endBtn.addEventListener('click', () => hangUp('user'));
+panel.addEventListener('keydown', e => { if (e.key === 'Escape' && !e.isComposing) { e.preventDefault(); hangUp('user'); } });
+
+/* ---------- the turn-taking orb ---------- */
+let orb = window.__orb || null, raf = 0, last = 0;
+if (!orb) { let tries = 0; (function wait() { orb = window.__orb || null; if (orb) kickOrb(); else if (++tries < 240) requestAnimationFrame(wait); })(); }
+function reduce() { return orb ? orb.reduce : matchMedia('(prefers-reduced-motion: reduce)').matches; }
+function kickOrb() {
+  if (!orb) return;
+  if (orb.reduce) { staticOrb(); return; }
+  if (!raf) { last = performance.now(); raf = requestAnimationFrame(orbFrame); }
+}
+function staticOrb() {   // reduced motion: states set directly, no easing, no spin
+  const cu = orb.cu;
+  cu.uYou.value = 0; cu.uRing.value = 0;
+  cu.uThink.value = vstate === 'thinking' ? 1 : 0;
+  cu.uTalk.value = vstate === 'speaking' ? 0.6 : 0;
+  cu.uCall.value = mode === 'idle' ? 0 : 1;
+  if (orb.render) orb.render();
+}
+function orbFrame(now) {
+  raf = 0;
+  const cu = orb.cu, dt = Math.min(0.05, Math.max(0, now - last) / 1000); last = now;
+  let lv = { you: 0, agent: 0 };
+  if (mode === 'live' && call) lv = call.levels;
+  else if (mode === 'offline' && vstate === 'speaking') lv = { you: 0, agent: 0.55 + 0.15 * Math.sin(now / 1000 * 2.2) };
+  const follow = (u, v) => { u.value += (v - u.value) * (v > u.value ? 0.35 : 0.08); };
+  const ease = (u, v, k) => { u.value += (v - u.value) * k; };
+  follow(cu.uYou, lv.you || 0);
+  follow(cu.uTalk, lv.agent || 0);
+  ease(cu.uThink, vstate === 'thinking' ? 1 : 0, 0.05);
+  cu.uSpin.value += dt * 0.5 * cu.uThink.value;
+  ease(cu.uCall, mode === 'idle' ? 0 : 1, 0.025);
+  ease(cu.uRing, connectedAt && now - connectedAt < 2200 ? 1 : 0, 0.05);
+  const rest = ['uYou', 'uTalk', 'uThink', 'uCall', 'uRing'];
+  if (mode === 'idle' && rest.every(k => cu[k].value < 0.002)) { rest.forEach(k => { cu[k].value = 0; }); return; }
+  raf = requestAnimationFrame(orbFrame);
+}
 </script>
 <script>
 /* =========================================================
