@@ -293,7 +293,7 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
             <div class="ask-row"><input id="callText" name="q" type="text" maxlength="300" enterkeyhint="send"><button type="submit" class="send">Send</button></div>
           </form>
           <div class="call-act">
-            <button type="button" class="btn ghost mic" id="callMic" aria-pressed="true" hidden><span class="sr">Microphone</span><span aria-hidden="true" id="callMicT">Mic on</span></button>
+            <button type="button" class="btn ghost mic" id="callMic" aria-pressed="true" hidden><span>Mic</span><span aria-hidden="true" id="callMicT"> on</span></button>
             <button type="button" class="btn end" id="callEnd">End call</button>
           </div>
           <p class="fine">It talks out loud and listens through your microphone, or you can type. Answers come only from his résumé, max 3 minutes.</p>
@@ -732,7 +732,7 @@ function flushPending() {
 }
 INTENTS.forEach(i => { const b = document.createElement('button'); b.type = 'button'; b.textContent = i.q; b.addEventListener('click', () => ask(i.q)); qs.appendChild(b); });
 form.addEventListener('submit', e => { e.preventDefault(); if (ask(input.value)) input.value = ''; input.focus(); });
-function syncMic() { micBtn.setAttribute('aria-pressed', micOn ? 'true' : 'false'); micT.textContent = micOn ? 'Mic on' : 'Mic off'; }
+function syncMic() { micBtn.setAttribute('aria-pressed', micOn ? 'true' : 'false'); micT.textContent = micOn ? ' on' : ' off'; }
 micBtn.addEventListener('click', () => { micOn = !micOn; if (call) call.setMicEnabled(micOn); syncMic(); });
 
 /* ---------- the live call ---------- */
@@ -793,6 +793,7 @@ function onError(err) {
   detach(); stopTimer();
   showAlert(kind === 'rate_limited' ? 'rate' : 'offline', kind === 'rate_limited' ? ERR_RATE : ERR_OFFLINE);
   enterOffline();
+  input.focus({ preventScroll: true });
 }
 
 /* ---------- scripted offline fallback ---------- */
@@ -857,7 +858,7 @@ function orbFrame(now) {
   let lv = { you: 0, agent: 0 };
   if (mode === 'live' && call) lv = call.levels;
   else if (mode === 'offline' && vstate === 'speaking') lv = { you: 0, agent: 0.55 + 0.15 * Math.sin(now / 1000 * 2.2) };
-  const follow = (u, v) => { u.value += (v - u.value) * (v > u.value ? 0.35 : 0.08); };
+  const follow = (u, v) => { u.value += (v - u.value) * (v > u.value ? 0.18 : 0.06); };
   const ease = (u, v, k) => { u.value += (v - u.value) * k; };
   follow(cu.uYou, lv.you || 0);
   follow(cu.uTalk, lv.agent || 0);
