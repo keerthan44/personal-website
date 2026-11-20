@@ -30,3 +30,6 @@ yarn-error.log*
 
 # vercel
 .vercelrm 
+.vercel
+.env*
+!.env.example

@@ -15,6 +15,10 @@ export function originAllowed(env, origin) {
   const allowed = (env.VOICE_ALLOWED_ORIGINS || DEFAULT_ORIGINS)
     .split(',').map((s) => s.trim()).filter(Boolean);
   if (allowed.includes(origin)) return true;
+  // Vercel preview deployments: exact match on this deployment's own URLs.
+  for (const host of [env.VERCEL_URL, env.VERCEL_BRANCH_URL]) {
+    if (host && origin === `https://${host}`) return true;
+  }
   if (env.NODE_ENV !== 'production') {
     return /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
   }

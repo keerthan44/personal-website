@@ -1,6 +1,7 @@
+import { createHash } from 'node:crypto';
 import { buildSettings } from './settings.mjs';
 import { clientIp, originAllowed as originOk } from './guard.mjs';
-import { redisFromEnv, dayKey, settle } from './analytics.mjs';
+import { redisFromEnv, dayKey, settle, envName } from './analytics.mjs';
 
 const GRANT_URL = 'https://api.deepgram.com/v1/auth/grant';
 const TTL_SECONDS = 30;
@@ -8,6 +9,13 @@ const MINUTE_MS = 60 * 1000;
 const DAY_MS = 24 * 60 * MINUTE_MS;
 const PER_MINUTE = 5;
 const PER_DAY = 40;
+const IP_WINDOW_S = 3600;
+const REDIS_TIMEOUT_MS = 400;
+
+const posInt = (v, dflt) => {
+  const n = Number.parseInt(v, 10);
+  return Number.isFinite(n) && n > 0 ? n : dflt;
+};
 
 export function createTokenHandler({ fetchImpl, env, now }) {
   const hits = new Map(); // ip -> timestamps (ms) within the last 24h
@@ -17,6 +25,38 @@ export function createTokenHandler({ fetchImpl, env, now }) {
   }
 
   const originAllowed = (origin) => originOk(env, origin);
+
+  // Shared caps in Redis (survive cold starts, span instances). Returns a
+  // 429 body or null. Redis missing, slow or failing -> null (never block).
+  async function checkCaps(redis, ip) {
+    const pre = envName(env);
+    const t = now();
+    const day = `${pre}:day:${dayKey(t)}`;
+    const salt = env.ANALYTICS_SALT || 'ipcap';
+    const ipKey = `${pre}:ipcap:${createHash('sha256').update(ip + salt).digest('hex').slice(0, 16)}`;
+    let out;
+    try {
+      out = await settle(redis.pipeline([['HGET', day, 'token'], ['INCR', ipKey], ['TTL', ipKey]]), REDIS_TIMEOUT_MS);
+    } catch { return null; }
+    if (!Array.isArray(out)) return null;
+    const val = (i) => (out[i] && out[i].result != null ? Number(out[i].result) : NaN);
+    const used = val(0);
+    const ipCount = val(1);
+    const ttl = val(2);
+    // Set the window on first use; also heals a key that lost its expiry.
+    if (Number.isFinite(ipCount) && !(ttl > 0)) {
+      await settle(redis.pipeline([['EXPIRE', ipKey, IP_WINDOW_S]]), REDIS_TIMEOUT_MS);
+    }
+    const dailyCap = posInt(env.VOICE_DAILY_CAP, pre === 'production' ? 60 : 200);
+    if (Number.isFinite(used) && used >= dailyCap) {
+      const midnight = Date.UTC(new Date(t).getUTCFullYear(), new Date(t).getUTCMonth(), new Date(t).getUTCDate() + 1);
+      return { error: 'daily_cap', retryAfter: Math.max(1, Math.ceil((midnight - t) / 1000)) };
+    }
+    if (Number.isFinite(ipCount) && ipCount > posInt(env.VOICE_IP_HOURLY_CAP, 8)) {
+      return { error: 'rate_limited', retryAfter: ttl > 0 ? ttl : IP_WINDOW_S };
+    }
+    return null;
+  }
 
   // Returns retryAfter seconds if limited, else 0 (and records the hit).
   function checkRate(ip) {
@@ -47,7 +87,8 @@ export function createTokenHandler({ fetchImpl, env, now }) {
     if (!originAllowed(req.headers.origin)) {
       return send(res, 403, { error: 'origin' });
     }
-    const retryAfter = checkRate(clientIp(req));
+    const ip = clientIp(req);
+    const retryAfter = checkRate(ip);
     if (retryAfter > 0) {
       res.setHeader('Retry-After', String(retryAfter));
       return send(res, 429, { error: 'rate_limited', retryAfter });
@@ -56,6 +97,15 @@ export function createTokenHandler({ fetchImpl, env, now }) {
     if (!key) {
       console.error('voice-token: DEEPGRAM_API_KEY is not set');
       return send(res, 503, { error: 'unavailable' });
+    }
+    let redis = null;
+    try { redis = redisFromEnv(env, fetchImpl); } catch { redis = null; }
+    if (redis) {
+      const capped = await checkCaps(redis, ip);
+      if (capped) {
+        res.setHeader('Retry-After', String(capped.retryAfter));
+        return send(res, 429, capped);
+      }
     }
     try {
       const r = await fetchImpl(GRANT_URL, {
@@ -73,9 +123,8 @@ export function createTokenHandler({ fetchImpl, env, now }) {
         return send(res, 503, { error: 'unavailable' });
       }
       try {
-        const redis = redisFromEnv(env, fetchImpl);
         if (redis) {
-          const day = `day:${dayKey(now())}`;
+          const day = `${envName(env)}:day:${dayKey(now())}`;
           // Awaited (bounded) so serverless doesn't freeze before it lands.
           await settle(redis.pipeline([['HINCRBY', day, 'token', 1], ['EXPIRE', day, 8640000]]), 400);
         }

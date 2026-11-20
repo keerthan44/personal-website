@@ -42,6 +42,14 @@ export function settle(promise, ms = 400) {
 
 export const dayKey = (ms) => new Date(ms).toISOString().slice(0, 10);
 
+export const ENVS = ['production', 'preview', 'development'];
+
+// The deployment environment; every Redis key is prefixed with it.
+export function envName(env) {
+  const v = env && env.VERCEL_ENV;
+  return ENVS.includes(v) ? v : 'development';
+}
+
 export function createTrackHandler({ fetchImpl, env, now }) {
   const hits = new Map(); // ip -> timestamps within the window
 
@@ -78,7 +86,8 @@ export function createTrackHandler({ fetchImpl, env, now }) {
       if (!redis) return done();
 
       const d = dayKey(now());
-      const day = `day:${d}`;
+      const pre = envName(env);
+      const day = `${pre}:day:${d}`;
       const e = body.e;
       const cmds = [['HINCRBY', day, e, 1]];
       const p = body.p && typeof body.p === 'object' ? body.p : {};
@@ -94,7 +103,7 @@ export function createTrackHandler({ fetchImpl, env, now }) {
         const hash = createHash('sha256')
           .update(`${d}|${ip}|${ua}|${salt}`)
           .digest('hex').slice(0, 16);
-        cmds.push(['PFADD', `uv:${d}`, hash], ['EXPIRE', `uv:${d}`, TTL]);
+        cmds.push(['PFADD', `${pre}:uv:${d}`, hash], ['EXPIRE', `${pre}:uv:${d}`, TTL]);
       }
       await settle(redis.pipeline(cmds));
     } catch (err) {
@@ -124,12 +133,15 @@ function keyOk(env, given) {
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-function renderHtml(data) {
+function renderHtml(data, key) {
   const t = data.totals;
+  const switcher = ENVS.map((name) => (name === data.env
+    ? `<li><span aria-current="page">${name}</span></li>`
+    : `<li><a href="?key=${esc(encodeURIComponent(key))}&amp;env=${name}">${name}</a></li>`)).join('');
   const row = (r) => `<tr><th scope="row">${esc(r.date)}</th><td>${r.visitors}</td><td>${r.views}</td><td>${r.talkClicks}</td><td>${r.clickRate}%</td><td>${r.connected}</td><td>${r.offline}</td><td>${r.tokens}</td><td>${r.lengths['<15']} / ${r.lengths['15-60']} / ${r.lengths['60-120']} / ${r.lengths['120+']}</td><td>${r.questions}</td></tr>`;
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex"><title>Site stats</title>
+<meta name="robots" content="noindex"><title>Site stats (${esc(data.env)})</title>
 <style>
 :root{--bg:#0e0f12;--fg:#eef0f3;--muted:#a3a8b2;--accent:#ff7a4d;--line:#2a2d34}
 *{box-sizing:border-box}
@@ -145,13 +157,17 @@ th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;font
 thead th{color:var(--accent);font-weight:600}
 tbody th,thead th:first-child{text-align:left}
 tfoot th,tfoot td{color:var(--fg);font-weight:700;border-top:2px solid var(--accent)}
+nav ul{display:flex;gap:16px;list-style:none;padding:0;margin:0 0 20px}
+nav a{color:var(--accent)}nav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+nav [aria-current]{color:var(--fg);font-weight:700}
 </style></head><body><main>
-<h1>Site stats</h1>
-<p>Last ${STATS_DAYS} days, UTC. No cookies, no stored IPs.</p>
+<h1>Site stats: ${esc(data.env)}</h1>
+<p>Environment: ${esc(data.env)}. Last ${STATS_DAYS} days, UTC. No cookies, no stored IPs.</p>
+<nav aria-label="Environment"><ul>${switcher}</ul></nav>
 <section aria-labelledby="sum"><h2 id="sum">30-day totals</h2>
 <ul class="sum"><li>Visitors (sum of daily) <b>${t.visitors}</b></li><li>Views <b>${t.views}</b></li><li>Talk clicks <b>${t.talkClicks}</b> (${t.clickRate}%)</li><li>Connected <b>${t.connected}</b></li><li>Offline <b>${t.offline}</b></li><li>Calls started (server) <b>${t.tokens}</b></li><li>Questions <b>${t.questions}</b></li></ul></section>
 <div class="wrap"><table>
-<caption>Daily visits and AI agent calls, newest first. Call lengths are counts of calls under 15 s / 15-60 s / 60-120 s / 120 s or more.</caption>
+<caption>Daily visits and AI agent calls (${esc(data.env)}), newest first. Call lengths are counts of calls under 15 s / 15-60 s / 60-120 s / 120 s or more.</caption>
 <thead><tr><th scope="col">Date</th><th scope="col">Visitors</th><th scope="col">Views</th><th scope="col">Talk clicks</th><th scope="col">Click rate</th><th scope="col">Connected</th><th scope="col">Offline</th><th scope="col">Calls started (server)</th><th scope="col">Call lengths</th><th scope="col">Questions</th></tr></thead>
 <tbody>${data.days.map(row).join('')}</tbody>
 <tfoot><tr><th scope="row">30-day total</th><td>${t.visitors}</td><td>${t.views}</td><td>${t.talkClicks}</td><td>${t.clickRate}%</td><td>${t.connected}</td><td>${t.offline}</td><td>${t.tokens}</td><td>${t.lengths['<15']} / ${t.lengths['15-60']} / ${t.lengths['60-120']} / ${t.lengths['120+']}</td><td>${t.questions}</td></tr></tfoot>
@@ -168,12 +184,13 @@ export function createStatsHandler({ fetchImpl, env, now }) {
     }
     const redis = redisFromEnv(env, fetchImpl);
     if (!redis) return res.status(503).send('Analytics store not configured');
+    const pre = ENVS.includes(q.env) ? q.env : envName(env);
     const t = now();
     const dates = [];
     for (let i = 0; i < STATS_DAYS; i++) dates.push(dayKey(t - i * DAY_MS));
     let out;
     try {
-      out = await redis.pipeline(dates.flatMap((d) => [['PFCOUNT', `uv:${d}`], ['HGETALL', `day:${d}`]]));
+      out = await redis.pipeline(dates.flatMap((d) => [['PFCOUNT', `${pre}:uv:${d}`], ['HGETALL', `${pre}:day:${d}`]]));
     } catch (err) {
       console.error('stats: failed', err && err.name);
       return res.status(502).send('Analytics store unavailable');
@@ -200,9 +217,9 @@ export function createStatsHandler({ fetchImpl, env, now }) {
       for (const k of Object.keys(totals.lengths)) totals.lengths[k] += r.lengths[k];
     }
     totals.clickRate = totals.views ? Math.round((totals.talkClicks / totals.views) * 1000) / 10 : 0;
-    const data = { days, totals };
+    const data = { env: pre, days, totals };
     if (q.format === 'json') return res.status(200).json(data);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    return res.status(200).send(renderHtml(data));
+    return res.status(200).send(renderHtml(data, q.key));
   };
 }

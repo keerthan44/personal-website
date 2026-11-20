@@ -450,3 +450,24 @@ test('token is re-fetched when the mic prompt outlives it', async () => {
   s.call.end();
   await p;
 });
+
+test('token 429 daily_cap → rate_limited error with reason daily_cap', async () => {
+  const s = setup({ tokenStatus: 429, tokenBody: { error: 'daily_cap', retryAfter: 3600 } });
+  await s.call.start();
+  await flush();
+  assert.strictEqual(s.WS.instances.length, 0);
+  const err = s.of('error')[0];
+  assert.strictEqual(err.kind, 'rate_limited');
+  assert.strictEqual(err.reason, 'daily_cap');
+  assert.strictEqual(err.retryAfter, 3600);
+});
+
+test('sendText is ignored while the call is capping', async () => {
+  const s = await connected();
+  await s.clock.advance(180_000);
+  const before = s.ws.sent.length;
+  assert.strictEqual(s.call.sendText('one more question'), false);
+  assert.strictEqual(s.ws.sent.length, before);
+  assert.ok(!s.ws.json().some((m) => m.type === 'InjectUserMessage'));
+  s.call.end();
+});

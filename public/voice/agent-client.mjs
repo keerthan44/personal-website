@@ -216,6 +216,9 @@ export function createVoiceCall(opts = {}) {
     try { body = await res.json(); } catch { /* non-JSON */ }
     if (res.status === 429) {
       const retryAfter = body && body.retryAfter;
+      if (body && body.error === 'daily_cap') {
+        return { error: { kind: 'rate_limited', reason: 'daily_cap', message: 'The agent has taken all its calls for today.', retryAfter } };
+      }
       return { error: { kind: 'rate_limited', message: 'Too many calls right now. Please try again later.', retryAfter } };
     }
     if (!res.ok || !body || !body.token || !body.settings) {
@@ -483,7 +486,7 @@ export function createVoiceCall(opts = {}) {
   }
 
   function sendText(text) {
-    if (ended || !applied || typeof text !== 'string' || !text.trim()) return false;
+    if (ended || !applied || capping || typeof text !== 'string' || !text.trim()) return false;
     return send({ type: 'InjectUserMessage', content: text });
   }
 

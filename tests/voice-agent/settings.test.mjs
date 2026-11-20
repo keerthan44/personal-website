@@ -29,7 +29,8 @@ test('prompt content and size', () => {
 
 test('prompt rules', () => {
   assert.ok(prompt.includes('Answer only from the RESUME'));
-  assert.ok(prompt.includes('one to three'));
+  assert.ok(prompt.includes('Answer in at most three short sentences, under fifty words, then stop.'));
+  assert.ok(prompt.indexOf('Answer in at most three') < prompt.indexOf('Answer only from the RESUME'), 'length rule comes first');
   assert.ok(prompt.includes('No markdown'));
   assert.ok(prompt.includes('third person'));
   assert.ok(prompt.includes('Decline off-topic'));

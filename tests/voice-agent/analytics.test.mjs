@@ -65,11 +65,11 @@ test('valid view -> 204 and pipeline commands', async () => {
   const res = mkRes();
   await handler(mkReq(), res);
   assert.strictEqual(res.statusCode, 204);
-  assert.ok(has(bodies, ['HINCRBY', 'day:2026-11-21', 'view', 1]));
-  assert.ok(has(bodies, ['EXPIRE', 'day:2026-11-21', 8640000]));
-  assert.ok(has(bodies, ['EXPIRE', 'uv:2026-11-21', 8640000]));
+  assert.ok(has(bodies, ['HINCRBY', 'development:day:2026-11-21', 'view', 1]));
+  assert.ok(has(bodies, ['EXPIRE', 'development:day:2026-11-21', 8640000]));
+  assert.ok(has(bodies, ['EXPIRE', 'development:uv:2026-11-21', 8640000]));
   const pf = flat(bodies).find((c) => c[0] === 'PFADD');
-  assert.strictEqual(pf[1], 'uv:2026-11-21');
+  assert.strictEqual(pf[1], 'development:uv:2026-11-21');
   assert.match(pf[2], /^[0-9a-f]{16}$/);
   assert.ok(!JSON.stringify(bodies).includes('1.2.3.4'));
   assert.ok(!JSON.stringify(bodies).includes('Mozilla'));
@@ -197,7 +197,7 @@ test('production without salt -> event counted, no PFADD', async () => {
   const res = mkRes();
   await handler(mkReq(), res);
   assert.strictEqual(res.statusCode, 204);
-  assert.ok(has(bodies, ['HINCRBY', 'day:2026-11-21', 'view', 1]));
+  assert.ok(has(bodies, ['HINCRBY', 'development:day:2026-11-21', 'view', 1]));
   assert.ok(!flat(bodies).some((c) => c[0] === 'PFADD'));
 });
 
@@ -246,7 +246,66 @@ test('token route: grant triggers one HINCRBY token; redis failure keeps 200', a
     assert.strictEqual(res.statusCode, 200);
     if (!redisFails) {
       const incr = redisBodies.flat().filter((c) => c[0] === 'HINCRBY');
-      assert.deepStrictEqual(incr, [['HINCRBY', 'day:2026-11-21', 'token', 1]]);
+      assert.deepStrictEqual(incr, [['HINCRBY', 'development:day:2026-11-21', 'token', 1]]);
     }
   }
+});
+
+test('envName: VERCEL_ENV or development', async () => {
+  const { envName } = await import('../../voice-agent/analytics.mjs');
+  assert.strictEqual(envName({}), 'development');
+  assert.strictEqual(envName({ VERCEL_ENV: 'production' }), 'production');
+  assert.strictEqual(envName({ VERCEL_ENV: 'preview' }), 'preview');
+  assert.strictEqual(envName({ VERCEL_ENV: 'development' }), 'development');
+  assert.strictEqual(envName({ VERCEL_ENV: 'weird' }), 'development');
+});
+
+test('track: production and preview events land in different keys', async () => {
+  const prod = setup({ VERCEL_ENV: 'production' });
+  await prod.handler(mkReq(), mkRes());
+  assert.ok(has(prod.bodies, ['HINCRBY', 'production:day:2026-11-21', 'view', 1]));
+  assert.strictEqual(flat(prod.bodies).find((c) => c[0] === 'PFADD')[1], 'production:uv:2026-11-21');
+  const prev = setup({ VERCEL_ENV: 'preview' });
+  await prev.handler(mkReq(), mkRes());
+  assert.ok(has(prev.bodies, ['HINCRBY', 'preview:day:2026-11-21', 'view', 1]));
+  assert.strictEqual(flat(prev.bodies).find((c) => c[0] === 'PFADD')[1], 'preview:uv:2026-11-21');
+  assert.ok(!flat(prev.bodies).some((c) => String(c[1]).startsWith('production:')));
+});
+
+function statsKeys(envOver, query) {
+  const seen = [];
+  const fetchImpl = async (url, init) => {
+    const cmds = JSON.parse(init.body);
+    seen.push(...cmds);
+    return { ok: true, json: async () => cmds.map((c) => (c[0] === 'PFCOUNT' ? { result: 0 } : { result: [] })) };
+  };
+  const h = createStatsHandler({ fetchImpl, env: { ...ENV, STATS_KEY: 'k', ...envOver }, now: () => T0 });
+  return { h, seen, run: async () => { const res = mkRes(); await h(mkReq({ method: 'GET', query: { key: 'k', ...query } }), res); return res; } };
+}
+
+test('stats: ?env=preview reads only preview keys and reports env', async () => {
+  const s = statsKeys({ VERCEL_ENV: 'production' }, { env: 'preview', format: 'json' });
+  const res = await s.run();
+  assert.strictEqual(res.statusCode, 200);
+  assert.strictEqual(res.body.env, 'preview');
+  assert.ok(s.seen.length > 0);
+  assert.ok(s.seen.every((c) => c[1].startsWith('preview:')), JSON.stringify(s.seen.slice(0, 2)));
+});
+
+test('stats: defaults to the deployment env; bad env param falls back', async () => {
+  const a = statsKeys({ VERCEL_ENV: 'production' }, { format: 'json' });
+  const r1 = await a.run();
+  assert.strictEqual(r1.body.env, 'production');
+  assert.ok(a.seen.every((c) => c[1].startsWith('production:')));
+  const b = statsKeys({}, { format: 'json', env: 'evil' });
+  const r2 = await b.run();
+  assert.strictEqual(r2.body.env, 'development');
+});
+
+test('stats: html names the env and links to the others, keeping the key', async () => {
+  const s = statsKeys({ VERCEL_ENV: 'production' }, {});
+  const res = await s.run();
+  assert.match(res.body, /<h1[^>]*>[^<]*production/i);
+  assert.match(res.body, /href="\?key=k&amp;env=preview"/);
+  assert.match(res.body, /href="\?key=k&amp;env=development"/);
 });
