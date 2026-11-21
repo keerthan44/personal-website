@@ -598,9 +598,11 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
   let px = 0, py = 0, tx = 0, ty = 0, out = 0, visible = true;
   addEventListener('pointermove', e => { tx = e.clientX / innerWidth - 0.5; ty = e.clientY / innerHeight - 0.5; });
   const hero = document.querySelector('.hero'), clock = new THREE.Clock();
+  let heroH = hero.offsetHeight; addEventListener('resize', () => { heroH = hero.offsetHeight; });
+  if ('ResizeObserver' in window) new ResizeObserver(() => { heroH = hero.offsetHeight; }).observe(hero);
   function frame() {
     const t = reduce ? 4 : clock.getElapsedTime();
-    const target = smooth(hero.offsetHeight * 0.25, hero.offsetHeight * 0.95, scrollY);
+    const target = smooth(heroH * 0.25, heroH * 0.95, scrollY);
     out += (target - out) * (reduce ? 1 : 0.08);
     cu.uTime.value = t; if (!reduce) cu.uIntro.value = Math.min(1, t / 2.4);
     cu.uOut.value = out; cubes.visible = out < 0.999;
@@ -974,8 +976,14 @@ function orbFrame(now) {
   /* interests highlight */
   const items = [...list.children];
   let lastIdx = -1;
-  const exTop = () => ex.getBoundingClientRect().top + scrollY;
-  const pinLen = () => Math.max(1, ex.offsetHeight - innerHeight);
+  /* layout is measured on resize only; reading it every frame forced a reflow per frame (the choppiness) */
+  let exTopC = 0, pinLenC = 1, vh = innerHeight;
+  const measure = () => { exTopC = ex.getBoundingClientRect().top + scrollY; pinLenC = Math.max(1, ex.offsetHeight - innerHeight); vh = innerHeight; };
+  measure();
+  addEventListener('resize', measure);
+  if ('ResizeObserver' in window) new ResizeObserver(measure).observe(document.body);
+  const exTop = () => exTopC;
+  const pinLen = () => pinLenC;
   const exProgress = () => clamp((scrollY - exTop()) / pinLen());
   function updateItems() {
     if (reduce) return;
@@ -1470,7 +1478,7 @@ function orbFrame(now) {
   let W = 1, Hh = 1;
   function resize() {
     W = cv.clientWidth || innerWidth; Hh = cv.clientHeight || innerHeight;
-    const px = Math.min(devicePixelRatio || 1, 2);
+    const px = Math.min(devicePixelRatio || 1, 1.5);
     renderer.setPixelRatio(px); renderer.setSize(W, Hh, false);
     camera.aspect = W / Hh; camera.updateProjectionMatrix();
     [glyphs, pulses, talkK, talkC].forEach(p => { p.material.uniforms.uPx.value = px; });
@@ -1481,22 +1489,24 @@ function orbFrame(now) {
   const pinP = () => exProgress() * 3;
   function stageTarget() {
     const top = exTop(), len = pinLen(), y = scrollY;
-    if (y < top) return smooth(top - innerHeight * 0.9, top, y);
+    if (y < top) return smooth(top - vh * 0.9, top, y);
     if (y < top + len) { const p = (y - top) / len * 3; return 1 + smooth(0.8, 1.2, p) + smooth(1.8, 2.2, p); }
-    return 3 + smooth(top + len, top + len + innerHeight * 0.85, y);
+    return 3 + smooth(top + len, top + len + vh * 0.85, y);
   }
-  let px = 0, py = 0, tx = 0, ty = 0, stageNow = 0, pNow = 0, lastT = 0, on = false, started = false;
+  let px = 0, py = 0, tx = 0, ty = 0, stageNow = 0, pNow = 0, lastT = 0, lastNow = performance.now(), on = false, started = false;
+  const pShown = [];
   addEventListener('pointermove', e => { tx = e.clientX / innerWidth - 0.5; ty = e.clientY / innerHeight - 0.5; });
   const clock = new THREE.Clock();
   function frame() {
     if (!on) return;
     const t = reduce ? 4 : clock.getElapsedTime(), dt = Math.min(0.05, t - lastT); lastT = t;
-    const ease = (reduce || !started) ? 1 : 0.07; started = true;
+    const now = performance.now(), rdt = Math.min(0.1, Math.max(0, (now - lastNow) / 1000)); lastNow = now;
+    const ease = (reduce || !started) ? 1 : 1 - Math.exp(-rdt / 0.24), pe = 1 - Math.exp(-rdt / 0.35); started = true;
     stageNow += (stageTarget() - stageNow) * ease; pNow += (pinP() - pNow) * ease;
     let S = stageNow;
     if (reduce) S = 1 + Math.min(2, Math.floor(pinP()));
     const w = k => Math.max(0, 1 - Math.abs(S - k));
-    px += (tx - px) * 0.05; py += (ty - py) * 0.05;
+    px += (tx - px) * pe; py += (ty - py) * pe;
     const wide = W > 720;
 
     // diorama: rises in as the section arrives, turns a little per act, follows the pointer
@@ -1517,12 +1527,12 @@ function orbFrame(now) {
     if (dust.visible) { for (let i = 0; i < DN; i++) { const d = dSeed[i], yy = (d[1] + (reduce ? 0 : t * 0.03)) % 1.7;
       dPos[i * 3] = d[0] + Math.sin(t * 0.3 + d[3]) * 0.04; dPos[i * 3 + 1] = 0.15 + yy; dPos[i * 3 + 2] = d[2] + Math.cos(t * 0.25 + d[3]) * 0.04; }
       dGeo.attributes.position.needsUpdate = true; }
-    if (!reduce) { const ai = Math.min(2, Math.floor(pNow)); items.forEach((li, i) => li.style.setProperty('--p', i === ai ? clamp(pNow - i).toFixed(3) : 0)); }
+    if (!reduce) { const ai = Math.min(2, Math.floor(pNow)); items.forEach((li, i) => { const v = i === ai ? clamp(pNow - i).toFixed(3) : '0'; if (pShown[i] !== v) { pShown[i] = v; li.style.setProperty('--p', v); } }); }
     updateDio(S, pNow, t, dt);
     renderer.render(scene, camera);
     if (!reduce) requestAnimationFrame(frame);
   }
-  const io = new IntersectionObserver(es => es.forEach(e => { const was = on; on = e.isIntersecting; if (on && !was) { resize(); frame(); } }), { rootMargin: '200px' });
+  const io = new IntersectionObserver(es => es.forEach(e => { const was = on; on = e.isIntersecting; if (on && !was) { resize(); measure(); lastNow = performance.now(); frame(); } }), { rootMargin: '200px' });
   io.observe(ex);
   if (reduce) { addEventListener('scroll', () => requestAnimationFrame(frame), { passive: true }); addEventListener('resize', () => requestAnimationFrame(frame)); }
 })();
