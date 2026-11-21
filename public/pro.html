@@ -571,6 +571,9 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
 
   /* the call (module script below) drives the call-state uniforms through this handle */
   window.__orb = { cu, reduce, render: () => requestAnimationFrame(frame) };
+  /* TEMP (remove before merge): ?orb=slight | ?orb=lot to compare orange levels on a phone */
+  { const v = new URLSearchParams(location.search).get('orb'), O = { slight: ['#f4d6c6', '#ff6a33'], lot: ['#f08a5d', '#ffb08a'] }[v];
+    if (O) { cu.uInk.value.set(O[0]); cu.uAcc.value.set(O[1]); } }
 
   // pointer -> portrait-local coordinates
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(), hit = new THREE.Vector3();
