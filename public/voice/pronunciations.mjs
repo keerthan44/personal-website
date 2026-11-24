@@ -4,15 +4,16 @@
 // (Gopalakrishnan, Celery and Redis all round-trip correctly as plain text).
 // An entry has either `ipa`, or `say`: text the voice is given instead (respellings,
 // or several marked-up parts). Captions map `say` back to `word` (see unsay).
-const IOT = 'ˌaɪoʊˈtiː ˈɹɛdi', NEO = 'ˈniːoʊskeɪl';
+const IOT = 'ˌaɪoʊˈtiː ˈɹɛdi', NEO = 'ˈniːoʊskeɪl', KRAFTX = 'ˈkɹæftɛks';
 export const PRONUNCIATIONS = [
   // No IPA got the Tamil name right; this respelling, picked by ear, does: KEER-thun.
   { word: 'Keerthan', say: 'Keerthunn' },
   { word: 'Deepgram', ipa: 'ˈdiːpɡɹæm' },
   { word: 'LiveKit', ipa: 'ˈlaɪv ˌkɪt' },  // LIVE as in alive, stress on LIVE
-  { word: 'Kraftx', ipa: 'ˈkɹæftɛks' },
+  { word: 'Kraftx.ai', say: `${markup('Kraftx', KRAFTX)} dot A I` },
+  { word: 'Kraftx', ipa: KRAFTX },
   { word: 'IntellifyAi', say: 'Intellify A I' },
-  // Unmarked, ".co" is read as "company" and ".io" loses its "dot".
+  // Unmarked, ".co" is read as "company", ".io" loses its "dot", and ".ai" is unclear.
   { word: 'IoTReady.co', say: `${markup('IoTReady', IOT)} dot ${markup('co', 'ˈkoʊ')}` },
   { word: 'IoTReady', ipa: IOT },
   { word: 'Neoscale.io', say: `${markup('Neoscale', NEO)} dot ${markup('io', 'ˌaɪˈoʊ')}` },

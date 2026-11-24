@@ -39,7 +39,7 @@ test('round trips', () => {
 test('respelled names caption as written', () => {
   assert.strictEqual(cleanSpoken("Hey, I'm Keerthunn."), "Hey, I'm Keerthan.");
   assert.strictEqual(cleanSpoken("Keerthunn's work"), "Keerthan's work");
-  assert.strictEqual(cleanSpoken(pronounceAll('IntellifyAi, IoTReady.co and Neoscale.io.')), 'IntellifyAi, IoTReady.co and Neoscale.io.');
+  assert.strictEqual(cleanSpoken(pronounceAll('IntellifyAi, Kraftx.ai, IoTReady.co and Neoscale.io.')), 'IntellifyAi, Kraftx.ai, IoTReady.co and Neoscale.io.');
   assert.strictEqual(cleanSpoken('Intellify A I'), 'IntellifyAi');
 });
 

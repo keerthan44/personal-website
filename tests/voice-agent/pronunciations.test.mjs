@@ -15,7 +15,7 @@ test('LiveKit is LIVE-kit, not LIFE-kit or LIV-kit', () => {
 
 test('list keeps the agreed words and adds the tech terms', () => {
   assert.deepStrictEqual(PRONUNCIATIONS.map((p) => p.word),
-    ['Keerthan', 'Deepgram', 'LiveKit', 'Kraftx', 'IntellifyAi', 'IoTReady.co', 'IoTReady', 'Neoscale.io', 'Neoscale', 'DuckDB', 'PES',
+    ['Keerthan', 'Deepgram', 'LiveKit', 'Kraftx.ai', 'Kraftx', 'IntellifyAi', 'IoTReady.co', 'IoTReady', 'Neoscale.io', 'Neoscale', 'DuckDB', 'PES',
       'PostgreSQL', 'FastAPI', 'Telnyx', 'Kyutai', 'Vapi', 'ECS', 'EKS', 'OTA',
       'Next.js', 'Node.js', 'Frappe', 'Plaid', 'Splitwise', 'MatchFives', 'CISCON']);
 });
@@ -39,6 +39,7 @@ test('names picked by ear', () => {
   assert.strictEqual(pronounceAll('IntellifyAi'), 'Intellify A I');
   // ".co" alone is read as "company"; ".io" lost its "dot"
   assert.strictEqual(pronounceAll('IoTReady.co'), `${markup('IoTReady', 'ˌaɪoʊˈtiː ˈɹɛdi')} dot ${markup('co', 'ˈkoʊ')}`);
+  assert.strictEqual(pronounceAll('Kraftx.ai'), `${markup('Kraftx', 'ˈkɹæftɛks')} dot A I`);
   assert.strictEqual(pronounceAll('Neoscale.io'), `${markup('Neoscale', 'ˈniːoʊskeɪl')} dot ${markup('io', 'ˌaɪˈoʊ')}`);
   assert.strictEqual(pronounceAll('at IoTReady and Neoscale'), `at ${markup('IoTReady', 'ˌaɪoʊˈtiː ˈɹɛdi')} and ${markup('Neoscale', 'ˈniːoʊskeɪl')}`);
 });
