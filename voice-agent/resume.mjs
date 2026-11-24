@@ -7,11 +7,14 @@ Website: itskeerthan.com
 SUMMARY
 Software Engineer with 4+ years of experience turning complex engineering problems into working products. From real-time voice AI reaching 4M people/day to full-stack systems shipped in weeks, focused on building fast, reliable systems at scale.
 
-TECHNICAL SKILLS
-Voice AI: LiveKit, Deepgram, ElevenLabs, Whisper, OpenAI, Retell, Vapi, STT/TTS, turn detection, LLM evals
-Languages: Python, JavaScript, TypeScript, Rust, Java, SQL, C, C++, HTML/CSS
-Technologies: FastAPI, Flask, Node.js, LangChain, Temporal, Celery, React/Next.js, Phoenix/Elixir, Ruby on Rails
-Data: Kafka, Redis, PostgreSQL, MongoDB, DuckDB, MariaDB, DynamoDB, Supabase
+MAIN STACK (what I use day to day)
+Python and TypeScript. Voice AI with LiveKit and Deepgram. Backends in FastAPI with PostgreSQL and Redis. Frontends in Next.js. Workflows with Temporal.
+
+ALSO USED (lighter or occasional experience, mention only if asked about that specific thing)
+Voice AI: ElevenLabs, Whisper, OpenAI, Retell, Vapi, STT/TTS, turn detection, LLM evals
+Languages: JavaScript, SQL, Java (some Spring Boot), Rust (a little), C, C++, HTML/CSS
+Technologies: Flask, Node.js, LangChain, Celery, React, Phoenix/Elixir, Ruby on Rails
+Data: Kafka, MongoDB, DuckDB, MariaDB, DynamoDB, Supabase
 Tools: Telnyx, SIP, Docker, Kubernetes, Terraform, GitHub Actions, Pytest, REST, AWS/GCP/DO/Azure, Git, Linux
 Domains: Applied AI Engineering, Backend Development, Full-Stack Development
 

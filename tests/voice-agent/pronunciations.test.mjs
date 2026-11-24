@@ -5,14 +5,26 @@ import { GREETING } from '../../voice-agent/settings.mjs';
 import { RESUME } from '../../voice-agent/resume.mjs';
 
 test('markup format is exact', () => {
-  assert.strictEqual(markup('Keerthan', 'ˈkiːɹθən'), '\\{"word": "Keerthan", "pronounce": "ˈkiːɹθən"\\}');
+  assert.strictEqual(markup('Keerthan', 'ˈkiːɹtən'), '\\{"word": "Keerthan", "pronounce": "ˈkiːɹtən"\\}');
+});
+
+test('LiveKit is LIVE-kit, not LIFE-kit or LIV-kit', () => {
+  // 'ˈlaɪvkɪt' with no break came out as "LifeKit"; the space keeps the v voiced
+  assert.strictEqual(PRONUNCIATIONS.find((p) => p.word === 'LiveKit').ipa, 'ˈlaɪv ˌkɪt');
 });
 
 test('list keeps the agreed words and adds the tech terms', () => {
   assert.deepStrictEqual(PRONUNCIATIONS.map((p) => p.word),
-    ['Keerthan', 'Gopalakrishnan', 'Kraftx', 'IntellifyAi', 'IoTReady', 'Neoscale', 'LiveKit', 'DuckDB', 'PES',
-      'PostgreSQL', 'FastAPI', 'Celery', 'Redis', 'Telnyx', 'Kyutai', 'Vapi', 'ECS', 'EKS', 'OTA',
+    ['Keerthan', 'Deepgram', 'LiveKit', 'Kraftx', 'IntellifyAi', 'IoTReady', 'Neoscale', 'DuckDB', 'PES',
+      'PostgreSQL', 'FastAPI', 'Telnyx', 'Kyutai', 'Vapi', 'ECS', 'EKS', 'OTA',
       'Next.js', 'Node.js', 'Frappe', 'Plaid', 'Splitwise', 'MatchFives', 'CISCON']);
+});
+
+test('words the voice already says right stay unmarked', () => {
+  // Their IPA entries made the voice worse.
+  for (const w of ['Gopalakrishnan', 'Celery', 'Redis']) {
+    assert.ok(!PRONUNCIATIONS.some((p) => p.word === w), w);
+  }
 });
 
 test('every word appears in the résumé and has a primary stress', () => {

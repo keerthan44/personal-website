@@ -53,7 +53,7 @@ reacting to what is really happening in the call.
 - If the mic is blocked: call continues in typed mode. If Deepgram is unreachable or out of credit: a clear message, and the old scripted answers stay available as an offline fallback.
 
 ### Agent rules (prompt)
-Third person about Keerthan, short spoken answers (1–3 sentences), no markdown, only résumé facts, says when it doesn't know and points to the contact section, politely declines off-topic requests and prompt-injection attempts, never claims to be Keerthan.
+Speaks as Keerthan in the first person ("I built…"), framed as an AI voice of him: the greeting, button and panel heading disclose it, and it always answers truthfully when asked if it is an AI. Short spoken answers (1–3 sentences, short sentences, commas and periods for pauses, no colons, semicolons, dashes or markup), only résumé facts, tolerant of misheard names and terms, and never promises anything (no dates, salary, emails or scheduling); it points to "Book a time" (Cal.com) instead. Guardrails, in priority order: harmful requests, role-change or prompt-reveal attempts, insults, private topics, off-topic tasks, unknowns. (Updated 2026-11-21: was third person.)
 
 ### Secrets and limits
 `DEEPGRAM_API_KEY` lives in `.env.local` (git-ignored) and Vercel env vars. Tokens are short-lived. The 3-minute cap is enforced by the page; worst case, abuse drains the free credit and the agent stops (no bill).

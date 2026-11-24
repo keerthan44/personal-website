@@ -216,7 +216,7 @@ test('ConversationText becomes text events with user/agent roles and drives stat
 
 test('agent text has pronunciation markup stripped; user text untouched', async () => {
   const s = await connected();
-  s.ws.srv({ type: 'ConversationText', role: 'assistant', content: 'Hi \\{"word": "Keerthan", "pronounce": "ˈkiːɹθən"\\}!' });
+  s.ws.srv({ type: 'ConversationText', role: 'assistant', content: 'Hi \\{"word": "Keerthan", "pronounce": "ˈkiːɹtən"\\}!' });
   s.ws.srv({ type: 'ConversationText', role: 'user', content: 'a \\{b\\}' });
   assert.deepStrictEqual(s.of('text'), [{ role: 'agent', text: 'Hi Keerthan!' }, { role: 'user', text: 'a \\{b\\}' }]);
   s.call.end();
@@ -384,7 +384,7 @@ test('warning once at 150 s; at 180 s InjectAgentMessage interrupt, then end(cap
   const inj = s.ws.json().filter((m) => m.type === 'InjectAgentMessage');
   assert.deepStrictEqual(inj, [{
     type: 'InjectAgentMessage',
-    message: "That's our three minutes. Thanks for calling! You'll find \\{\"word\": \"Keerthan\", \"pronounce\": \"ˈkiːɹθən\"\\}'s contact details at the bottom of the page.",
+    message: "That's our three minutes. Thanks for talking! To reach the real me, book a time or email me at the bottom of the page.",
     behavior: 'interrupt',
   }]);
   assert.strictEqual(s.of('end').length, 0);

@@ -6,7 +6,7 @@ import { cleanSpoken } from './captions.mjs';
 import { pronounceAll } from './pronunciations.mjs';
 
 const AGENT_URL = 'wss://agent.deepgram.com/v1/agent/converse';
-const CAP_MESSAGE = pronounceAll("That's our three minutes. Thanks for calling! You'll find Keerthan's contact details at the bottom of the page.");
+const CAP_MESSAGE = pronounceAll("That's our three minutes. Thanks for talking! To reach the real me, book a time or email me at the bottom of the page.");
 const KEEPALIVE_MS = 8000;      // Deepgram wants one every 8 s while no audio is flowing
 const AUDIO_IDLE_MS = 1000;     // no mic frame sent for this long counts as "not streaming"
 const CAP_GRACE_MS = 6000;      // hard stop after the goodbye is injected

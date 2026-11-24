@@ -3,8 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Keerthan · Turn-taking Orb</title>
+<title>Keerthan Gopalakrishnan</title>
 <meta name="description" content="Software engineer building real-time voice AI.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Keerthan Gopalakrishnan">
+<meta property="og:description" content="Software engineer building real-time voice AI.">
+<meta property="og:url" content="https://www.itskeerthan.com/">
+<meta name="theme-color" content="#0e0f12">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..700&family=Geist+Mono:wght@400;500&display=swap">
@@ -272,7 +278,7 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
         <li class="hide-s"><a href="#experience">Experience</a></li>
         <li class="hide-s"><a href="#work">Work</a></li>
         <li class="hide-s"><a href="#contact">Contact</a></li>
-        <li><a class="cv" href="https://www.itskeerthan.com/resume/KeerthanGopalakrishnan.pdf" target="_blank" rel="noopener">Résumé</a></li>
+        <li><a class="cv" href="/resume/KeerthanGopalakrishnan.pdf" target="_blank" rel="noopener">Résumé</a></li>
       </ul>
     </nav>
   </div>
@@ -285,16 +291,16 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
         <h1 id="name">Keerthan <span>Gopalakrishnan</span></h1>
         <p class="pitch">Software engineer building <strong>real-time voice AI</strong>. My systems reach <strong>4M people a day</strong>, and I ship them in weeks, not quarters.</p>
         <div class="ctas">
-          <a class="btn primary" href="https://www.itskeerthan.com/resume/KeerthanGopalakrishnan.pdf" target="_blank" rel="noopener">View résumé</a>
+          <a class="btn primary" href="/resume/KeerthanGopalakrishnan.pdf" target="_blank" rel="noopener">View résumé</a>
           <a class="btn ghost" href="#contact">Get in touch</a>
         </div>
-        <button type="button" class="talk" id="talkBtn" aria-expanded="false" aria-controls="call"><span class="wv" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="talk-l" id="talkL">Talk to my AI agent <small>it answers out loud</small></span></button>
+        <button type="button" class="talk" id="talkBtn" aria-expanded="false" aria-controls="call"><span class="wv" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="talk-l" id="talkL">Talk to me <small>an AI voice of me answers out loud</small></span></button>
         <p class="sr" id="callState" role="status"></p>
         <div class="call-wrap" id="callWrap" hidden><div class="call-clip">
         <section class="call" id="call" aria-labelledby="callH">
           <div class="call-top">
             <div class="ava" aria-hidden="true"><span><i></i><i></i><i></i></span></div>
-            <div><h2 id="callH">Keerthan's AI agent</h2><p class="sub" aria-hidden="true"><span class="dot"></span><span id="callStateVis">Connecting</span></p></div>
+            <div><h2 id="callH">Keerthan (AI voice)</h2><p class="sub" aria-hidden="true"><span class="dot"></span><span id="callStateVis">Connecting</span></p></div>
             <span class="timer mono" id="callTime" aria-hidden="true" hidden></span>
           </div>
           <p class="alert" id="callAlert" role="alert"></p>
@@ -310,7 +316,7 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
             <button type="button" class="btn ghost mic" id="callMic" aria-pressed="true" hidden><span>Mic</span><span aria-hidden="true" id="callMicT"> on</span></button>
             <button type="button" class="btn end" id="callEnd">End call</button>
           </div>
-          <p class="fine">It talks out loud and listens through your microphone, or you can type. Answers come only from his résumé, max 3 minutes. Audio is processed by Deepgram and isn't stored.</p>
+          <p class="fine">It talks out loud and listens through your microphone, or you can type. This is an AI voice of me, not me live. It answers only from my résumé, for up to 3 minutes. Audio is processed by Deepgram and isn't stored.</p>
         </section>
         </div></div>
         <p class="local">It's <b id="clock">--:--</b> where I am, <span id="doing">probably fixing a customer issue.</span></p>
@@ -431,14 +437,14 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
       <h2 id="ctH">Let's talk.</h2>
       <p class="lede">Building something hard with voice or AI, or hiring for it? I'd like to hear about it.</p>
       <div class="row">
-        <a class="btn primary" href="#contact" id="bookLink">Book a time <span aria-hidden="true">&rarr;</span></a>
+        <a class="btn primary" href="https://cal.com/keerthan-gopalakrishnan-qzu4ak" target="_blank" rel="noopener" id="bookLink">Book a time <span aria-hidden="true">&rarr;</span><span class="sr"> (opens in a new tab)</span></a>
         <div class="mail"><span id="email">keerthan44@gmail.com</span><button type="button" id="copy">Copy</button></div>
       </div>
       <p class="status" id="copyMsg" role="status"></p>
       <ul class="elsewhere" aria-label="Find me elsewhere">
         <li><a href="https://linkedin.com/in/keerthan44" target="_blank" rel="noopener">LinkedIn</a></li>
         <li><a href="https://github.com/keerthan44" target="_blank" rel="noopener">GitHub</a></li>
-        <li><a href="https://www.itskeerthan.com/resume/KeerthanGopalakrishnan.pdf" target="_blank" rel="noopener">Résumé</a></li>
+        <li><a href="/resume/KeerthanGopalakrishnan.pdf" target="_blank" rel="noopener">Résumé</a></li>
       </ul>
       <footer class="mono"><span>Keerthan Gopalakrishnan</span><span>&copy; 2026</span></footer>
     </div>
@@ -637,6 +643,7 @@ import { createVoiceCall } from '/voice/agent-client.mjs';
 import { track } from '/track.mjs';
 
 track('view');
+document.getElementById('bookLink').addEventListener('click', () => track('book-click'));
 
 const $ = id => document.getElementById(id);
 const panel = $('call'), talk = $('talkBtn'), endBtn = $('callEnd'), micBtn = $('callMic'), micT = $('callMicT');
@@ -645,24 +652,25 @@ const wrap = $('callWrap'), talkL = $('talkL'), TALK_HTML = talkL.innerHTML;
 const qs = $('callQs'), qsL = $('callQsL'), form = $('callAsk'), input = $('callText'), timeEl = $('callTime');
 
 const CAP = 180;
-const STATUS = { connecting: 'Connecting', listening: 'Listening', thinking: 'Thinking', speaking: 'Agent speaking', interrupted: "Go ahead, I'm listening", ended: 'Call ended' };
+const STATUS = { connecting: 'Connecting', listening: 'Listening', thinking: 'Thinking', speaking: 'AI voice speaking', interrupted: "Go ahead, I'm listening", ended: 'Call ended' };
 const OFFLINE_STATUS = 'Offline answers';
-const ERR_OFFLINE = 'The agent is offline right now.';
+const ERR_OFFLINE = 'My AI voice is offline right now.';
 const ERR_RATE = 'Too many calls right now. Try again in a minute.';
-const ERR_DAILY = 'The agent has taken all its calls for today. Here are some offline answers.';
+const ERR_DAILY = 'My AI voice has taken all its calls for today. Here are some saved answers.';
 const MIC_WAIT = 'Allow microphone access to talk, or type below';
 const MIC_BLOCKED = 'Microphone blocked. You can still type your questions.';
 
 /* scripted offline answers, used only after the live agent reports an error */
 const INTENTS = [
-  { q: 'Is he open to roles?', k: /open|hir|availab|looking|new role|join/i, a: "Yes, he's open to new roles, especially on teams building hard things with voice or AI. The quickest route is booking a time at the bottom of this page." },
-  { q: 'What does he do?', k: /what.*(do|work)|about|who|role|job|experience/i, a: 'Keerthan is a software engineer who builds real-time voice AI. Most recently he was a forward deployed engineer at Blue Machines AI, where his calling workflows reached four million people a day.' },
-  { q: "What's he built?", k: /buil|project|ship|made|portfolio/i, a: "A few highlights. Voice agents that handle around two hundred US healthcare insurance calls a day. A speaking practice platform with several AI agents in one room, shipped in ten days. And BigBasket's driver invoicing app, built in three weeks and used by over a hundred thousand people." },
-  { q: 'How fast are his agents?', k: /fast|laten|speed|quick|slow/i, a: 'Under one and a half seconds from when you stop talking to when the agent answers, on live phone calls. He gets there by measuring every hop: speech to text, the model, and the voice.' },
-  { q: "What's his stack?", k: /stack|tech|language|tool|python|skill|framework/i, a: 'Python, TypeScript and Rust. For voice, LiveKit, Deepgram and ElevenLabs. Temporal and Kafka for workflows, and Kubernetes on AWS or GCP for infrastructure.' },
-  { q: 'How do I reach him?', k: /contact|reach|email|meet|book|talk to him|call him/i, a: 'Scroll to the bottom of this page. You can book a time on his calendar or email him directly.' }
+  { q: 'Hiring', chip: false, k: /open to|hir|availab|looking for|new role|join|salary|notice period|start date/i, a: "That's a conversation I'd rather have with you directly. You can book a time at the bottom of this page." },
+  { q: 'Where have you worked?', k: /where.*work|compan|employ|blue machines|kraft|intellify|iot ?ready|neoscale/i, a: 'Most recently Blue Machines AI, as a forward deployed engineer. Before that, IntellifyAi, Kraftx.ai as a founding engineer, IoTReady and Neoscale.' },
+  { q: 'What do you do?', k: /what.*(do|work)|about|who|role|job|experience/i, a: "I'm a software engineer who builds real-time voice AI. Most recently I was a forward deployed engineer at Blue Machines AI, where my calling workflows reached four million people a day." },
+  { q: 'What have you built?', k: /buil|project|ship|made|portfolio/i, a: "A few highlights. Voice agents that handle around two hundred US healthcare insurance calls a day. A speaking practice platform with several AI agents in one room, shipped in ten days. And BigBasket's driver invoicing app, built in three weeks and used by over a hundred thousand people." },
+  { q: 'How fast are your agents?', k: /fast|laten|speed|quick|slow/i, a: 'Under one and a half seconds from when you stop talking to when the agent answers, on live phone calls. I get there by measuring every hop: speech to text, the model, and the voice.' },
+  { q: "What's your stack?", k: /stack|tech|language|tool|python|skill|framework/i, a: 'Mostly Python and TypeScript. I build voice agents on LiveKit and Deepgram, with FastAPI, Postgres and Redis behind them.' },
+  { q: 'How do I reach you?', k: /contact|reach|email|meet|book|talk to (him|you)|call (him|you)/i, a: 'Scroll to the bottom of this page. You can book a time on my calendar or email me directly.' }
 ];
-const MISS = "I only know what's in Keerthan's résumé, so I'll pass on that one. Try asking what he's built, or how to reach him.";
+const MISS = "I only know what's on my résumé, so I'll pass on that one. Try asking what I've built, or how to reach me.";
 const synth = 'speechSynthesis' in window ? speechSynthesis : null;
 let voice = null;
 function pickVoice() {
@@ -704,7 +712,7 @@ function setVisual(s) {
 function logEntry(role, text) {
   const p = document.createElement('p'), b = document.createElement('b'), t = document.createElement('span');
   p.className = role === 'user' ? 'u' : 'a';
-  b.textContent = role === 'user' ? 'You:' : 'Agent:'; t.textContent = text;
+  b.textContent = role === 'user' ? 'You:' : 'Keerthan (AI):'; t.textContent = text;
   p.append(b, ' ', t);
   logEl.append(p); logEl.hidden = false;
   logEl.scrollTo({ top: logEl.scrollHeight, behavior: reduce() ? 'auto' : 'smooth' });
@@ -761,7 +769,7 @@ function flushPending() {
   const list = pending; pending = [];
   list.forEach(t => { if (call && call.sendText(t)) recent.push({ k: t.toLowerCase(), at: performance.now() }); });
 }
-INTENTS.forEach(i => { const b = document.createElement('button'); b.type = 'button'; b.textContent = i.q; b.addEventListener('click', () => ask(i.q, 'chip')); qs.appendChild(b); });
+INTENTS.filter(i => i.chip !== false).forEach(i => { const b = document.createElement('button'); b.type = 'button'; b.textContent = i.q; b.addEventListener('click', () => ask(i.q, 'chip')); qs.appendChild(b); });
 form.addEventListener('submit', e => { e.preventDefault(); if (ask(input.value)) input.value = ''; input.focus(); });
 function syncMic() { micBtn.setAttribute('aria-pressed', micOn ? 'true' : 'false'); micT.textContent = micOn ? ' on' : ' off'; }
 micBtn.addEventListener('click', () => { micOn = !micOn; if (call) call.setMicEnabled(micOn); syncMic(); });
@@ -779,7 +787,7 @@ function startTimer() {
 }
 function stopTimer() { clearInterval(tickId); tickId = 0; }
 /* ---------- panel open/close: fade + expand, reversed on close; instant under reduced motion ---------- */
-let panelSeq = 0, talkTimer = 0, talkFadeTimer = 0;
+let panelSeq = 0, talkTimer = 0, talkFadeTimer = 0, panelScroll = 0;
 function afterTransition(ms, fn) {
   if (reduce()) { fn(); return; }
   let done = false;
@@ -790,6 +798,7 @@ function afterTransition(ms, fn) {
 }
 function openPanel() {
   const seq = ++panelSeq;
+  panelScroll = scrollY;
   wrap.inert = false; wrap.hidden = false; wrap.classList.remove('settled');
   void wrap.offsetHeight;                          // commit the collapsed state so the open transitions
   wrap.classList.add('open');
@@ -798,6 +807,9 @@ function openPanel() {
 function closePanel(after) {
   const seq = ++panelSeq;
   wrap.inert = true; wrap.classList.remove('settled', 'open');
+  // the open panel made the hero taller and the visitor scrolled down to reach it; as it collapses,
+  // glide back to where they started so the next section doesn't slide up over the orb
+  if (scrollY > panelScroll + 4) scrollTo({ top: panelScroll, behavior: reduce() ? 'auto' : 'smooth' });
   afterTransition(360, () => { if (seq !== panelSeq) return; wrap.hidden = true; wrap.inert = false; after(); });
 }
 function resetTalkLabel() {
@@ -1244,16 +1256,17 @@ function orbFrame(now) {
     ['REQUEST · #224', 'Need SSO before launch', 'security review Monday', 'SHIPPED', 'SAML + Okta, live']
   ];
   const CARD_POS = [[-0.44, 1.1, 0.02], [0.04, 1.46, -0.08], [0.48, 1.13, 0.0]];
+  const NARROW_POS = [[-0.52, 1.0, 0.02], [0.0, 1.45, -0.08], [0.52, 1.04, 0.04]];
   const cards = ISSUES.map((d, i) => {
     const sides = [0, 1].map(fixed => {
       const tx = canvasTex(512, 220);
       const draw = () => { const g = tx.g; g.clearRect(0, 0, 512, 220);
         g.fillStyle = 'rgba(22,24,29,0.94)'; rrect(g, 4, 4, 504, 212, 18); g.fill();
         g.strokeStyle = fixed ? 'rgba(255,122,77,0.55)' : 'rgba(255,255,255,0.14)'; g.lineWidth = 2; g.stroke();
-        g.fillStyle = fixed ? '#ff7a4d' : '#9aa3b0'; g.beginPath(); g.arc(40, 50, 6, 0, 7); g.fill();
+        g.fillStyle = fixed ? '#ff7a4d' : '#ffffff'; g.beginPath(); g.arc(40, 50, 6, 0, 7); g.fill();
         g.font = '500 21px "Geist Mono", ui-monospace, monospace'; g.fillText(fixed ? d[3] : d[0], 58, 57);
-        g.fillStyle = fixed ? '#a3a8b2' : '#eef0f3'; g.font = '500 36px "Bricolage Grotesque", Arial, sans-serif'; g.fillText(d[1], 32, 120);
-        g.fillStyle = fixed ? '#eef0f3' : '#8b919c'; g.font = '400 25px "Geist Mono", ui-monospace, monospace'; g.fillText(fixed ? d[4] : d[2], 32, 170);
+        g.fillStyle = '#ffffff'; g.font = '500 36px "Bricolage Grotesque", Arial, sans-serif'; g.fillText(d[1], 32, 120);
+        g.fillStyle = '#ffffff'; g.font = '400 25px "Geist Mono", ui-monospace, monospace'; g.fillText(fixed ? d[4] : d[2], 32, 170);
         tx.t.needsUpdate = true; };
       draw(); redraw.push(draw); return tx.t;
     });
@@ -1455,13 +1468,16 @@ function orbFrame(now) {
     if (act2.visible) {
       const bl = clamp((Pp - 1.2) / 0.56);
       world.updateMatrixWorld(); world.getWorldQuaternion(tmpQ).invert().multiply(camera.quaternion);
+      // phones: same three-card layout as desktop, just larger and spread wider so the text reads
+      const narrow = W < 560;
       cards.forEach((cd, i) => {
         const rp = reduce ? 1 : smooth(0.06 + 0.3 * i, 0.24 + 0.3 * i, bl), c = Math.cos(rp * Math.PI);
         cd.m.material.map = cd.sides[c < 0 ? 1 : 0];
         cd.m.quaternion.copy(tmpQ);
-        const s = backOut(clamp(cardVis * 1.6 - i * 0.25));
+        const s = backOut(clamp(cardVis * 1.6 - i * 0.25)) * (narrow ? 1.35 : 1);
         cd.m.scale.set(Math.max(0.001, Math.abs(c)) * s, Math.max(0.001, s), 1);
-        cd.m.position.copy(cd.base); cd.m.position.y += reduce ? 0 : Math.sin(t * 1.2 + i * 2) * 0.025;
+        if (narrow) cd.m.position.set(...NARROW_POS[i]); else cd.m.position.copy(cd.base);
+        cd.m.position.y += reduce ? 0 : Math.sin(t * 1.2 + i * 2) * 0.025;
       });
       const hk = head(K), hc = head(C);
       [[talkC, hc, hk, 0.42], [talkK, hk, hc, 0.62]].forEach(([fl, a, b, up]) => { const u = fl.material.uniforms;

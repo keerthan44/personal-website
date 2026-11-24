@@ -8,7 +8,7 @@ export const KEYTERMS = [
 ];
 
 export const GREETING = pronounceAll(
-  "Hi, I'm Keerthan's AI agent. Ask me anything about his work: what he's built, where he's worked, or whether he's open to new roles.",
+  "Hey, I'm Keerthan, or at least the AI version. Ask me what I've built, or where I've worked.",
 );
 
 export function buildSettings() {

@@ -6,7 +6,11 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "jsx": "preserve",
-    "lib": ["dom", "es2017", "DOM.Iterable"],
+    "lib": [
+      "dom",
+      "es2017",
+      "DOM.Iterable"
+    ],
     "module": "esnext",
     "moduleResolution": "node",
     "noEmit": true,
@@ -18,6 +22,11 @@
     "strict": true,
     "target": "esnext"
   },
-  "exclude": ["node_modules"],
-  "include": ["**/*.ts", "**/*.tsx", "pages/_app.tsx", "modules/types.d.ts"]
+  "exclude": [
+    "node_modules"
+  ],
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
 }

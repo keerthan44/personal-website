@@ -43,7 +43,7 @@ const flat = (bodies) => bodies.flat();
 const has = (bodies, cmd) => flat(bodies).some((c) => JSON.stringify(c) === JSON.stringify(cmd));
 
 test('EVENTS list', () => {
-  assert.deepStrictEqual(EVENTS, ['view', 'talk-click', 'call-connected', 'call-offline', 'call-ended', 'question']);
+  assert.deepStrictEqual(EVENTS, ['view', 'talk-click', 'book-click', 'call-connected', 'call-offline', 'call-ended', 'question']);
 });
 
 test('redisFromEnv: null when unset, KV fallback, posts pipeline', async () => {
@@ -308,4 +308,48 @@ test('stats: html names the env and links to the others, keeping the key', async
   assert.match(res.body, /<h1[^>]*>[^<]*production/i);
   assert.match(res.body, /href="\?key=k&amp;env=preview"/);
   assert.match(res.body, /href="\?key=k&amp;env=development"/);
+});
+
+test('country: counted for view, talk-click and book-click from the Vercel header', async () => {
+  const { handler, bodies } = setup();
+  for (const e of ['view', 'talk-click', 'book-click']) {
+    const req = mkReq({ body: { e } });
+    req.headers['x-vercel-ip-country'] = 'DE';
+    await handler(req, mkRes());
+    assert.ok(has(bodies, ['HINCRBY', 'development:day:2026-11-21', `${e}:country=DE`, 1]), e);
+  }
+});
+
+test('country: ignored for other events, junk values and missing header', async () => {
+  const { handler, bodies } = setup();
+  const q = mkReq({ body: { e: 'question', p: { via: 'voice' } } });
+  q.headers['x-vercel-ip-country'] = 'DE';
+  await handler(q, mkRes());
+  for (const bad of ['de', 'XYZ', '<b>', '']) {
+    const r = mkReq({ body: { e: 'view' } });
+    r.headers['x-vercel-ip-country'] = bad;
+    await handler(r, mkRes());
+  }
+  await handler(mkReq({ body: { e: 'view' } }), mkRes());
+  assert.ok(!flat(bodies).some((c) => String(c[2]).includes('country=')));
+});
+
+test('stats: book clicks and a by-country breakdown sorted by clicks', async () => {
+  const fetchImpl = async (url, init) => ({ ok: true, json: async () => JSON.parse(init.body).map((c) => c[0] === 'PFCOUNT' ? { result: 1 } : { result: [
+    'view', '5', 'book-click', '2',
+    'view:country=IN', '3', 'talk-click:country=IN', '1',
+    'view:country=US', '2', 'talk-click:country=US', '1', 'book-click:country=US', '2',
+  ] }) });
+  const h = createStatsHandler({ fetchImpl, env: { ...ENV, STATS_KEY: 'k' }, now: () => T0 });
+  const res = mkRes();
+  await h(mkReq({ method: 'GET', query: { key: 'k', format: 'json' } }), res);
+  const data = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
+  assert.strictEqual(data.days[0].bookClicks, 2);
+  assert.strictEqual(data.totals.bookClicks, 60);
+  assert.deepStrictEqual(data.countries[0], { code: 'US', views: 60, talkClicks: 30, bookClicks: 60 });
+  assert.deepStrictEqual(data.countries[1], { code: 'IN', views: 90, talkClicks: 30, bookClicks: 0 });
+  const html = mkRes();
+  await h(mkReq({ method: 'GET', query: { key: 'k' } }), html);
+  assert.ok(html.body.includes('Book clicks'));
+  assert.ok(html.body.includes('United States'));
 });

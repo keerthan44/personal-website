@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { clientIp, originAllowed } from './guard.mjs';
 
-export const EVENTS = ['view', 'talk-click', 'call-connected', 'call-offline', 'call-ended', 'question'];
+export const EVENTS = ['view', 'talk-click', 'book-click', 'call-connected', 'call-offline', 'call-ended', 'question'];
 
 const ALLOWED_PROPS = {
   kind: ['connect', 'token', 'rate_limited', 'agent', 'network'],
@@ -9,6 +9,10 @@ const ALLOWED_PROPS = {
   secs: ['<15', '15-60', '60-120', '120+'],
   via: ['voice', 'typed', 'chip'],
 };
+// Events that also get a per-country count (Vercel's geo header, two-letter code).
+const COUNTRY_EVENTS = ['view', 'talk-click', 'book-click'];
+const COUNTRY_RE = /^[A-Z]{2}$/;
+const MAX_COUNTRIES = 25;
 const BOT_RE = /bot|crawl|spider|slurp|headless|lighthouse|preview|curl|wget|python|httpclient/i;
 const TTL = 8640000; // 100 days
 const WINDOW_MS = 10 * 60 * 1000;
@@ -97,6 +101,10 @@ export function createTrackHandler({ fetchImpl, env, now }) {
           cmds.push(['HINCRBY', day, `${e}:${key}=${val}`, 1]);
         }
       }
+      const cc = req.headers['x-vercel-ip-country'];
+      if (COUNTRY_EVENTS.includes(e) && typeof cc === 'string' && COUNTRY_RE.test(cc)) {
+        cmds.push(['HINCRBY', day, `${e}:country=${cc}`, 1]);
+      }
       cmds.push(['EXPIRE', day, TTL]);
       const salt = env.ANALYTICS_SALT || (env.NODE_ENV === 'production' ? '' : 'portfolio');
       if (e === 'view' && salt) {
@@ -133,12 +141,17 @@ function keyOk(env, given) {
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+let regionNames = null;
+try { regionNames = new Intl.DisplayNames(['en'], { type: 'region' }); } catch { /* fall back to codes */ }
+const countryName = (code) => { try { return (regionNames && regionNames.of(code)) || code; } catch { return code; } };
+const geoRow = (c) => `<tr><th scope="row">${esc(countryName(c.code))}</th><td>${c.views}</td><td>${c.talkClicks}</td><td>${c.bookClicks}</td></tr>`;
+
 function renderHtml(data, key) {
   const t = data.totals;
   const switcher = ENVS.map((name) => (name === data.env
     ? `<li><span aria-current="page">${name}</span></li>`
     : `<li><a href="?key=${esc(encodeURIComponent(key))}&amp;env=${name}">${name}</a></li>`)).join('');
-  const row = (r) => `<tr><th scope="row">${esc(r.date)}</th><td>${r.visitors}</td><td>${r.views}</td><td>${r.talkClicks}</td><td>${r.clickRate}%</td><td>${r.connected}</td><td>${r.offline}</td><td>${r.tokens}</td><td>${r.lengths['<15']} / ${r.lengths['15-60']} / ${r.lengths['60-120']} / ${r.lengths['120+']}</td><td>${r.questions}</td></tr>`;
+  const row = (r) => `<tr><th scope="row">${esc(r.date)}</th><td>${r.visitors}</td><td>${r.views}</td><td>${r.talkClicks}</td><td>${r.clickRate}%</td><td>${r.bookClicks}</td><td>${r.connected}</td><td>${r.offline}</td><td>${r.tokens}</td><td>${r.lengths['<15']} / ${r.lengths['15-60']} / ${r.lengths['60-120']} / ${r.lengths['120+']}</td><td>${r.questions}</td></tr>`;
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><title>Site stats (${esc(data.env)})</title>
@@ -147,11 +160,12 @@ function renderHtml(data, key) {
 *{box-sizing:border-box}
 body{margin:0;padding:24px 16px;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif}
 main{max-width:1000px;margin:0 auto}
-h2{font-size:1.1rem;margin:0 0 8px}.sum{display:flex;flex-wrap:wrap;gap:8px 24px;list-style:none;padding:0;margin:0 0 24px;color:var(--muted)}.sum b{color:var(--fg)}
+h2{font-size:1.1rem;margin:24px 0 8px}.sum{display:flex;flex-wrap:wrap;gap:8px 24px;list-style:none;padding:0;margin:0 0 24px;color:var(--muted)}.sum b{color:var(--fg)}
 h1{font-size:1.6rem;margin:0 0 8px}
 p{color:var(--muted);margin:0 0 20px}
 .wrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;min-width:720px}
+table.geo{min-width:0;max-width:560px}
 caption{text-align:left;color:var(--muted);padding:8px 0}
 th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
 thead th{color:var(--accent);font-weight:600}
@@ -165,13 +179,19 @@ nav [aria-current]{color:var(--fg);font-weight:700}
 <p>Environment: ${esc(data.env)}. Last ${STATS_DAYS} days, UTC. No cookies, no stored IPs.</p>
 <nav aria-label="Environment"><ul>${switcher}</ul></nav>
 <section aria-labelledby="sum"><h2 id="sum">30-day totals</h2>
-<ul class="sum"><li>Visitors (sum of daily) <b>${t.visitors}</b></li><li>Views <b>${t.views}</b></li><li>Talk clicks <b>${t.talkClicks}</b> (${t.clickRate}%)</li><li>Connected <b>${t.connected}</b></li><li>Offline <b>${t.offline}</b></li><li>Calls started (server) <b>${t.tokens}</b></li><li>Questions <b>${t.questions}</b></li></ul></section>
+<ul class="sum"><li>Visitors (sum of daily) <b>${t.visitors}</b></li><li>Views <b>${t.views}</b></li><li>Talk clicks <b>${t.talkClicks}</b> (${t.clickRate}%)</li><li>Book clicks <b>${t.bookClicks}</b></li><li>Connected <b>${t.connected}</b></li><li>Offline <b>${t.offline}</b></li><li>Calls started (server) <b>${t.tokens}</b></li><li>Questions <b>${t.questions}</b></li></ul></section>
 <div class="wrap"><table>
 <caption>Daily visits and AI agent calls (${esc(data.env)}), newest first. Call lengths are counts of calls under 15 s / 15-60 s / 60-120 s / 120 s or more.</caption>
-<thead><tr><th scope="col">Date</th><th scope="col">Visitors</th><th scope="col">Views</th><th scope="col">Talk clicks</th><th scope="col">Click rate</th><th scope="col">Connected</th><th scope="col">Offline</th><th scope="col">Calls started (server)</th><th scope="col">Call lengths</th><th scope="col">Questions</th></tr></thead>
+<thead><tr><th scope="col">Date</th><th scope="col">Visitors</th><th scope="col">Views</th><th scope="col">Talk clicks</th><th scope="col">Click rate</th><th scope="col">Book clicks</th><th scope="col">Connected</th><th scope="col">Offline</th><th scope="col">Calls started (server)</th><th scope="col">Call lengths</th><th scope="col">Questions</th></tr></thead>
 <tbody>${data.days.map(row).join('')}</tbody>
-<tfoot><tr><th scope="row">30-day total</th><td>${t.visitors}</td><td>${t.views}</td><td>${t.talkClicks}</td><td>${t.clickRate}%</td><td>${t.connected}</td><td>${t.offline}</td><td>${t.tokens}</td><td>${t.lengths['<15']} / ${t.lengths['15-60']} / ${t.lengths['60-120']} / ${t.lengths['120+']}</td><td>${t.questions}</td></tr></tfoot>
-</table></div></main></body></html>`;
+<tfoot><tr><th scope="row">30-day total</th><td>${t.visitors}</td><td>${t.views}</td><td>${t.talkClicks}</td><td>${t.clickRate}%</td><td>${t.bookClicks}</td><td>${t.connected}</td><td>${t.offline}</td><td>${t.tokens}</td><td>${t.lengths['<15']} / ${t.lengths['15-60']} / ${t.lengths['60-120']} / ${t.lengths['120+']}</td><td>${t.questions}</td></tr></tfoot>
+</table></div>
+<section aria-labelledby="geoH"><h2 id="geoH">Where visitors come from</h2>
+<div class="wrap"><table class="geo">
+<caption>Views, talk clicks and book clicks by visitor country (${esc(data.env)}), last ${STATS_DAYS} days, most clicks first. Top ${MAX_COUNTRIES} countries.</caption>
+<thead><tr><th scope="col">Country</th><th scope="col">Views</th><th scope="col">Talk clicks</th><th scope="col">Book clicks</th></tr></thead>
+<tbody>${data.countries.length ? data.countries.map(geoRow).join('') : '<tr><td colspan="4">No country data yet.</td></tr>'}</tbody>
+</table></div></section></main></body></html>`;
 }
 
 export function createStatsHandler({ fetchImpl, env, now }) {
@@ -195,7 +215,8 @@ export function createStatsHandler({ fetchImpl, env, now }) {
       console.error('stats: failed', err && err.name);
       return res.status(502).send('Analytics store unavailable');
     }
-    const blank = () => ({ visitors: 0, tokens: 0, views: 0, talkClicks: 0, clickRate: 0, connected: 0, offline: 0, questions: 0, lengths: { '<15': 0, '15-60': 0, '60-120': 0, '120+': 0 } });
+    const blank = () => ({ visitors: 0, tokens: 0, views: 0, talkClicks: 0, bookClicks: 0, clickRate: 0, connected: 0, offline: 0, questions: 0, lengths: { '<15': 0, '15-60': 0, '60-120': 0, '120+': 0 } });
+    const byCountry = {};
     const days = dates.map((date, i) => {
       const h = toMap(out[i * 2 + 1] && out[i * 2 + 1].result);
       const r = blank();
@@ -203,6 +224,13 @@ export function createStatsHandler({ fetchImpl, env, now }) {
       r.visitors = Number(out[i * 2] && out[i * 2].result) || 0;
       r.views = h.view || 0;
       r.talkClicks = h['talk-click'] || 0;
+      r.bookClicks = h['book-click'] || 0;
+      for (const [k, v] of Object.entries(h)) {
+        const m = /^(view|talk-click|book-click):country=([A-Z]{2})$/.exec(k);
+        if (!m) continue;
+        const c = byCountry[m[2]] || (byCountry[m[2]] = { code: m[2], views: 0, talkClicks: 0, bookClicks: 0 });
+        c[{ view: 'views', 'talk-click': 'talkClicks', 'book-click': 'bookClicks' }[m[1]]] += v;
+      }
       r.connected = h['call-connected'] || 0;
       r.offline = h['call-offline'] || 0;
       r.tokens = h.token || 0;
@@ -213,11 +241,14 @@ export function createStatsHandler({ fetchImpl, env, now }) {
     });
     const totals = blank();
     for (const r of days) {
-      for (const k of ['visitors', 'tokens', 'views', 'talkClicks', 'connected', 'offline', 'questions']) totals[k] += r[k];
+      for (const k of ['visitors', 'tokens', 'views', 'talkClicks', 'bookClicks', 'connected', 'offline', 'questions']) totals[k] += r[k];
       for (const k of Object.keys(totals.lengths)) totals.lengths[k] += r.lengths[k];
     }
     totals.clickRate = totals.views ? Math.round((totals.talkClicks / totals.views) * 1000) / 10 : 0;
-    const data = { env: pre, days, totals };
+    const countries = Object.values(byCountry)
+      .sort((a, b) => (b.talkClicks + b.bookClicks) - (a.talkClicks + a.bookClicks) || b.views - a.views || a.code.localeCompare(b.code))
+      .slice(0, MAX_COUNTRIES);
+    const data = { env: pre, days, totals, countries };
     if (q.format === 'json') return res.status(200).json(data);
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     return res.status(200).send(renderHtml(data, q.key));

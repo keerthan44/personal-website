@@ -1,5 +1,3 @@
-declare module "*.pdf";
-
 declare module "*/voice-agent/token.mjs" {
   import type { NextApiRequest, NextApiResponse } from "next";
   export function createTokenHandler(deps: {
