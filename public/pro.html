@@ -163,9 +163,17 @@ section.sec > .in { padding-block: 104px; }
 .no-motion .excited { height: auto; }
 .no-motion .excited .pin { position: relative; height: auto; min-height: 100svh; padding-block: 96px; }
 @media (max-width: 720px) {
-  .excited .pin { align-items: flex-end; padding-bottom: 28px; }
-  .excited .pin > .in { padding-top: 56px; background: linear-gradient(to bottom, rgba(14,15,18,0) 0, var(--bg) 56px); }
-  .items h3 { font-size: clamp(1.7rem, 8vw, 2.4rem); }
+  /* the canvas runs edge to edge (its glow was clipped by the band padding); the list is tighter so the scene gets the room */
+  .excited { padding-inline: 0; }
+  .excited .pin { align-items: flex-end; padding-bottom: max(20px, env(safe-area-inset-bottom, 0px)); }
+  .excited .pin > .in { padding-inline: max(16px, env(safe-area-inset-left, 0px)); padding-top: 36px; background: linear-gradient(to bottom, rgba(14,15,18,0) 0, var(--bg) 36px); }
+  .excited .label { margin-bottom: 10px; }
+  .items { gap: 0; }
+  .items li { padding-block: 5px; }
+  .items h3 { font-size: clamp(1.35rem, 6.4vw, 2rem); }
+  .items p { font-size: 0.95rem; line-height: 1.45; }
+  .items li.active p { margin-top: 6px; }
+  .items li.active .prog { margin-top: 10px; }
 }
 .credits { color: var(--muted); }
 
@@ -1516,15 +1524,15 @@ function orbFrame(now) {
   /* phones: fit the diorama into the free band between the header and the list,
      so short or tall screens (and a showing URL bar) never crop its top */
   const hdr = document.getElementById('top'), txt = ex.querySelector('.pin > .in');
-  let fitS = 0.66, fitY = 0.82;
+  let fitS = 0.66, fitY = 0.82, fsN = -1, fyN = 0.82;
   function fitBand() {
     if (W > 720 || !txt) return;
     const u = 2 * camera.position.z * Math.tan(camera.fov * Math.PI / 360) / Hh; // world units per px at z = 0
     const top = (hdr ? hdr.offsetHeight : 64) + 14;
-    const bottom = Hh - txt.offsetHeight + 44; // the list's top padding fades out, so the scene may sit over it
+    const bottom = Hh - txt.offsetHeight + 30; // the list's top padding fades out, so the scene may sit over it
     const band = Math.max(80, bottom - top);
     // diorama spans about -0.4..1.8 in its own units (zoom up to 1.07 and the act-3 lift included)
-    fitS = Math.min(0.66, (band * u) / (2.2 * 1.1), (W / Hh) * camera.position.z * Math.tan(camera.fov * Math.PI / 360) / 1.25);
+    fitS = Math.min(0.82, (band * u) / (2.2 * 1.1), (W / Hh) * camera.position.z * Math.tan(camera.fov * Math.PI / 360) / 1.25);
     const mid = (top + bottom) / 2;
     fitY = camera.position.y + (Hh / 2 - mid) * u - 0.7 * fitS;
   }
@@ -1556,7 +1564,8 @@ function orbFrame(now) {
 
     // diorama: rises in as the section arrives, turns a little per act, follows the pointer
     const appear = smooth(0.3, 1.0, S);
-    const dx = wide ? 1.6 : 0, dy = wide ? -0.88 : fitY, ds = (wide ? 1.3 : fitS) * Math.max(0.001, backOut(appear));
+    if (fsN < 0) { fsN = fitS; fyN = fitY; } else { fsN += (fitS - fsN) * pe; fyN += (fitY - fyN) * pe; } // ease, don't jump, when the list changes height
+    const dx = wide ? 1.6 : 0, dy = wide ? -0.88 : fyN, ds = (wide ? 1.3 : fsN) * Math.max(0.001, backOut(appear));
     dio.position.set(dx, dy - 0.5 * (1 - appear), 0); dio.scale.setScalar(ds);
     const yaw = -0.42 * w(1) + 0.0 * w(2) + 0.22 * w(3) - 0.12 * w(4) - 0.42 * w(0);
     const tilt = 0.36 * w(0) + 0.44 * w(1) + 0.36 * w(2) + 0.24 * w(3) + 0.34 * w(4);
