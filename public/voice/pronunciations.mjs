@@ -2,14 +2,21 @@
 // stress mark and ɹ, as Deepgram Flux TTS expects inline pronunciation markup.
 // Only list words the voice gets wrong unaided: a bad entry is worse than none
 // (Gopalakrishnan, Celery and Redis all round-trip correctly as plain text).
+// An entry has either `ipa`, or `say`: text the voice is given instead (respellings,
+// or several marked-up parts). Captions map `say` back to `word` (see unsay).
+const IOT = 'ˌaɪoʊˈtiː ˈɹɛdi', NEO = 'ˈniːoʊskeɪl';
 export const PRONUNCIATIONS = [
-  { word: 'Keerthan', ipa: 'ˈkiːɹtən' },
+  // No IPA got the Tamil name right; this respelling, picked by ear, does: KEER-thun.
+  { word: 'Keerthan', say: 'Keerthunn' },
   { word: 'Deepgram', ipa: 'ˈdiːpɡɹæm' },
   { word: 'LiveKit', ipa: 'ˈlaɪv ˌkɪt' },  // LIVE as in alive, stress on LIVE
   { word: 'Kraftx', ipa: 'ˈkɹæftɛks' },
-  { word: 'IntellifyAi', ipa: 'ɪnˈtɛlɪfaɪ ˌeɪˈaɪ' },
-  { word: 'IoTReady', ipa: 'ˌaɪoʊˈtiː ˈɹɛdi' },
-  { word: 'Neoscale', ipa: 'ˈniːoʊskeɪl' },
+  { word: 'IntellifyAi', say: 'Intellify A I' },
+  // Unmarked, ".co" is read as "company" and ".io" loses its "dot".
+  { word: 'IoTReady.co', say: `${markup('IoTReady', IOT)} dot ${markup('co', 'ˈkoʊ')}` },
+  { word: 'IoTReady', ipa: IOT },
+  { word: 'Neoscale.io', say: `${markup('Neoscale', NEO)} dot ${markup('io', 'ˌaɪˈoʊ')}` },
+  { word: 'Neoscale', ipa: NEO },
   { word: 'DuckDB', ipa: 'ˈdʌk ˌdiːˈbiː' },
   { word: 'PES', ipa: 'ˌpiː ˌiː ˈɛs' },
   { word: 'PostgreSQL', ipa: 'ˈpoʊstɡɹɛs' },
@@ -33,7 +40,10 @@ export function markup(word, ipa) {
   return `\\{"word": "${word}", "pronounce": "${ipa}"\\}`;
 }
 
-const byWord = new Map(PRONUNCIATIONS.map((p) => [p.word, p.ipa]));
+// What the voice is given for an entry.
+export const spoken = (p) => p.say ?? markup(p.word, p.ipa);
+
+const byWord = new Map(PRONUNCIATIONS.map((p) => [p.word, spoken(p)]));
 const WORDS_RE = new RegExp(
   `(?<![A-Za-z])(${PRONUNCIATIONS.map((p) => p.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).sort((a, b) => b.length - a.length).join('|')})(?![A-Za-z])`,
   'g',
@@ -41,5 +51,16 @@ const WORDS_RE = new RegExp(
 
 // Whole-word, case-sensitive. One pass, so inserted markup is never re-scanned.
 export function pronounceAll(text) {
-  return String(text).replace(WORDS_RE, (w) => markup(w, byWord.get(w)));
+  return String(text).replace(WORDS_RE, (w) => byWord.get(w));
+}
+
+// Captions: once markup is stripped, turn each `say` back into the written word,
+// so the screen shows "Keerthan" and "IoTReady.co", not "Keerthunn" or "IoTReady dot co".
+const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const plainSay = (say) => say.replace(/\\\{"word": "([^"]*)", "pronounce": "[^"]*"\\\}/g, '$1');
+const SAID = PRONUNCIATIONS.filter((p) => p.say).map((p) => [plainSay(p.say), p.word]).sort((a, b) => b[0].length - a[0].length);
+const SAID_RE = new RegExp(`(?<![A-Za-z])(${SAID.map(([s]) => esc(s)).join('|')})(?![A-Za-z])`, 'g');
+const toWord = new Map(SAID);
+export function unsay(text) {
+  return typeof text === 'string' ? text.replace(SAID_RE, (s) => toWord.get(s)) : text;
 }

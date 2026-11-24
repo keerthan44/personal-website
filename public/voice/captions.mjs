@@ -1,6 +1,8 @@
-// Strips Deepgram pronunciation markup from spoken text so captions show plain words.
+// Strips Deepgram pronunciation markup from spoken text so captions show plain words,
+// and maps respelled names back ("Keerthunn" → "Keerthan").
 // Also copes with markup split across two ConversationText messages.
 // Backslash runs are bounded ({0,4}) so hostile input cannot cause heavy backtracking.
+import { unsay } from './pronunciations.mjs';
 const Q = '["“”„‘’\']';
 const NQ = '[^"“”„‘’]';
 const VAL = `${Q}(${NQ}*)${Q}`;
@@ -18,13 +20,14 @@ const HEAD_ORPHAN = new RegExp(`^[^{}]{0,200}?${Q}\\s*\\\\{0,4}\\}`);
 const STRAY = /\\{1,4}[{}]/g;
 
 export function cleanSpoken(text) {
-  if (typeof text !== 'string' || (!text.includes('{') && !text.includes('}') && !text.includes('\\'))) return text;
-  return text
+  if (typeof text !== 'string') return text;
+  if (!text.includes('{') && !text.includes('}') && !text.includes('\\')) return unsay(text);
+  return unsay(text
     .replace(WORD_FIRST, (_m, word) => word)
     .replace(PRON_FIRST, (_m, _ipa, word) => word)
     .replace(HEAD_ORPHAN, '')
     .replace(TAIL_PRON_WORD, (_m, _ipa, word) => word)
     .replace(TAIL_WORD, (_m, word) => word)
     .replace(TAIL_ANY, '')
-    .replace(STRAY, '');
+    .replace(STRAY, ''));
 }

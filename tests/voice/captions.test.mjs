@@ -36,6 +36,13 @@ test('round trips', () => {
   assert.strictEqual(cleanSpoken(pronounceAll(s)), s);
 });
 
+test('respelled names caption as written', () => {
+  assert.strictEqual(cleanSpoken("Hey, I'm Keerthunn."), "Hey, I'm Keerthan.");
+  assert.strictEqual(cleanSpoken("Keerthunn's work"), "Keerthan's work");
+  assert.strictEqual(cleanSpoken(pronounceAll('IntellifyAi, IoTReady.co and Neoscale.io.')), 'IntellifyAi, IoTReady.co and Neoscale.io.');
+  assert.strictEqual(cleanSpoken('Intellify A I'), 'IntellifyAi');
+});
+
 test('unclosed trailing fragment becomes the word', () => {
   assert.strictEqual(cleanSpoken('Hi \\{"word": "Keerthan", "pronounce": "ˈkiː'), 'Hi Keerthan');
   assert.strictEqual(cleanSpoken('Hi \\{"word": "Keerthan", '), 'Hi Keerthan');

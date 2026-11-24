@@ -15,7 +15,7 @@ test('settings shape', () => {
   assert.strictEqual(s.agent.speak.provider.model, 'flux-haley-en');
   assert.strictEqual(s.agent.speak.provider.version, 'v2');
   assert.ok(!('speed' in s.agent.speak.provider));
-  assert.ok(s.agent.greeting.includes('\\{"word": "Keerthan", "pronounce": "ˈkiːɹtən"\\}'));
+  assert.ok(s.agent.greeting.includes("I'm Keerthunn,"));
   assert.ok(s.agent.greeting.length > 0);
   assert.strictEqual(s.experimental, true);
   assert.deepStrictEqual(s.tags, ['portfolio']);
@@ -60,9 +60,17 @@ test('stack answers stay short and lead with the main stack', () => {
 
 test('prompt has pronunciation section with exact markup', () => {
   assert.ok(prompt.includes('PRONUNCIATION'));
-  assert.ok(prompt.includes('Keerthan → \\{"word": "Keerthan", "pronounce": "ˈkiːɹtən"\\}'));
+  assert.ok(prompt.includes('Keerthan → Keerthunn\n'));
+  assert.ok(prompt.includes('Kraftx → \\{"word": "Kraftx", "pronounce": "ˈkɹæftɛks"\\}'));
   assert.ok(prompt.includes('Never explain or mention this formatting'));
   assert.ok(prompt.includes('Keerthan Gopalakrishnan'));
+});
+
+test('the résumé in the prompt uses the spoken names', () => {
+  const resume = prompt.slice(prompt.indexOf('\nRESUME\n'));
+  for (const w of ['IntellifyAi,', 'IoTReady.co,', 'Neoscale.io,']) assert.ok(!resume.includes(w), w);
+  assert.ok(resume.includes('Intellify A I,'));
+  assert.ok(resume.includes('Keerthunn Gopalakrishnan'));
 });
 
 test('prompt has a possessive example sentence built from markup()', () => {
