@@ -156,20 +156,9 @@ function statsSetup(envOver = {}) {
   return handler;
 }
 
-test('stats: wrong/missing key -> 404', async () => {
-  for (const q of [{}, { key: 'x' }]) {
-    const res = mkRes();
-    await statsSetup()(mkReq({ method: 'GET', query: q }), res);
-    assert.strictEqual(res.statusCode, 404);
-  }
-  const res = mkRes();
-  await statsSetup({ STATS_KEY: '' })(mkReq({ method: 'GET', query: { key: '' } }), res);
-  assert.strictEqual(res.statusCode, 404);
-});
-
 test('stats: json 30 rows newest first with click rate', async () => {
   const res = mkRes();
-  await statsSetup()(mkReq({ method: 'GET', query: { key: 'sekret', format: 'json' } }), res);
+  await statsSetup()(mkReq({ method: 'GET', headers: { authorization: 'Bearer sekret' }, query: { format: 'json' } }), res);
   assert.strictEqual(res.statusCode, 200);
   const data = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
   assert.strictEqual(data.days.length, 30);
@@ -186,7 +175,7 @@ test('stats: json includes token count', async () => {
   const fetchImpl = async (url, init) => ({ ok: true, json: async () => JSON.parse(init.body).map((c) => c[0] === 'PFCOUNT' ? { result: 1 } : { result: ['token', '6'] }) });
   const h = createStatsHandler({ fetchImpl, env: { ...ENV, STATS_KEY: 'k' }, now: () => T0 });
   const res = mkRes();
-  await h(mkReq({ method: 'GET', query: { key: 'k', format: 'json' } }), res);
+  await h(mkReq({ method: 'GET', headers: { authorization: 'Bearer k' }, query: { format: 'json' } }), res);
   const data = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
   assert.strictEqual(data.days[0].tokens, 6);
   assert.strictEqual(data.totals.tokens, 180);
@@ -222,7 +211,7 @@ test('token route: hanging redis still returns 200 within timeout', async () => 
 
 test('stats: html has table and caption', async () => {
   const res = mkRes();
-  await statsSetup()(mkReq({ method: 'GET', query: { key: 'sekret' } }), res);
+  await statsSetup()(mkReq({ method: 'GET', headers: { authorization: 'Bearer sekret' }, query: {} }), res);
   assert.strictEqual(res.statusCode, 200);
   assert.match(res.headers['content-type'], /text\/html/);
   assert.strictEqual(res.headers['x-robots-tag'], 'noindex');
@@ -280,7 +269,7 @@ function statsKeys(envOver, query) {
     return { ok: true, json: async () => cmds.map((c) => (c[0] === 'PFCOUNT' ? { result: 0 } : { result: [] })) };
   };
   const h = createStatsHandler({ fetchImpl, env: { ...ENV, STATS_KEY: 'k', ...envOver }, now: () => T0 });
-  return { h, seen, run: async () => { const res = mkRes(); await h(mkReq({ method: 'GET', query: { key: 'k', ...query } }), res); return res; } };
+  return { h, seen, run: async () => { const res = mkRes(); await h(mkReq({ method: 'GET', headers: { authorization: 'Bearer k' }, query: { ...query } }), res); return res; } };
 }
 
 test('stats: ?env=preview reads only preview keys and reports env', async () => {
@@ -302,12 +291,14 @@ test('stats: defaults to the deployment env; bad env param falls back', async ()
   assert.strictEqual(r2.body.env, 'development');
 });
 
-test('stats: html names the env and links to the others, keeping the key', async () => {
+test('stats: html names the env and links to the others without the key', async () => {
   const s = statsKeys({ VERCEL_ENV: 'production' }, {});
   const res = await s.run();
   assert.match(res.body, /<h1[^>]*>[^<]*production/i);
-  assert.match(res.body, /href="\?key=k&amp;env=preview"/);
-  assert.match(res.body, /href="\?key=k&amp;env=development"/);
+  assert.match(res.body, /href="\?env=preview"/);
+  assert.match(res.body, /href="\?env=development"/);
+  assert.ok(!res.body.includes('key=k'), 'key never appears in a link');
+  assert.match(res.body, /name="action" value="logout"/);
 });
 
 test('country: counted for view, talk-click and book-click from the Vercel header', async () => {
@@ -342,14 +333,83 @@ test('stats: book clicks and a by-country breakdown sorted by clicks', async () 
   ] }) });
   const h = createStatsHandler({ fetchImpl, env: { ...ENV, STATS_KEY: 'k' }, now: () => T0 });
   const res = mkRes();
-  await h(mkReq({ method: 'GET', query: { key: 'k', format: 'json' } }), res);
+  await h(mkReq({ method: 'GET', headers: { authorization: 'Bearer k' }, query: { format: 'json' } }), res);
   const data = typeof res.body === 'string' ? JSON.parse(res.body) : res.body;
   assert.strictEqual(data.days[0].bookClicks, 2);
   assert.strictEqual(data.totals.bookClicks, 60);
   assert.deepStrictEqual(data.countries[0], { code: 'US', views: 60, talkClicks: 30, bookClicks: 60 });
   assert.deepStrictEqual(data.countries[1], { code: 'IN', views: 90, talkClicks: 30, bookClicks: 0 });
   const html = mkRes();
-  await h(mkReq({ method: 'GET', query: { key: 'k' } }), html);
+  await h(mkReq({ method: 'GET', headers: { authorization: 'Bearer k' }, query: {} }), html);
   assert.ok(html.body.includes('Book clicks'));
   assert.ok(html.body.includes('United States'));
+});
+
+/* ---------- stats auth: the key never travels in a URL ---------- */
+const cookieOf = (res) => String(res.headers['set-cookie'] || '').split(';')[0];
+const getStats = (h, o = {}) => { const res = mkRes(); return h(mkReq({ method: 'GET', headers: {}, query: {}, ...o }), res).then(() => res); };
+
+test('stats: unconfigured key -> 404', async () => {
+  const res = await getStats(statsSetup({ STATS_KEY: '' }));
+  assert.strictEqual(res.statusCode, 404);
+});
+
+test('stats: a key in the URL is ignored; you get the sign-in form, no data', async () => {
+  const res = await getStats(statsSetup(), { query: { key: 'sekret' } });
+  assert.strictEqual(res.statusCode, 200);
+  assert.match(res.body, /type="password"/);
+  assert.match(res.body, /method="post"/);
+  assert.ok(!/<table/.test(res.body));
+  assert.strictEqual(res.headers['referrer-policy'], 'no-referrer');
+});
+
+test('stats: json without credentials -> 401, wrong bearer -> 401', async () => {
+  assert.strictEqual((await getStats(statsSetup(), { query: { format: 'json' } })).statusCode, 401);
+  assert.strictEqual((await getStats(statsSetup(), { headers: { authorization: 'Bearer nope' }, query: { format: 'json' } })).statusCode, 401);
+});
+
+test('stats: signing in with a POSTed key sets a scoped HttpOnly cookie and redirects', async () => {
+  const h = statsSetup();
+  const res = mkRes();
+  await h(mkReq({ method: 'POST', headers: {}, body: { key: 'sekret' } }), res);
+  assert.strictEqual(res.statusCode, 303);
+  assert.strictEqual(res.headers.location, '/api/stats');
+  const c = String(res.headers['set-cookie']);
+  assert.match(c, /^stats_session=\d+\.[\w-]+;/);
+  assert.match(c, /Path=\/api\/stats/); assert.match(c, /HttpOnly/); assert.match(c, /SameSite=Strict/); assert.match(c, /Secure/);
+  assert.ok(!c.includes('sekret'), 'cookie never contains the key');
+  const page = await getStats(h, { headers: { cookie: cookieOf(res) } });
+  assert.strictEqual(page.statusCode, 200);
+  assert.match(page.body, /<table/);
+});
+
+test('stats: wrong POSTed key -> 401 with the form and an error', async () => {
+  const res = mkRes();
+  await statsSetup()(mkReq({ method: 'POST', headers: {}, body: { key: 'wrong' } }), res);
+  assert.strictEqual(res.statusCode, 401);
+  assert.match(res.body, /role="alert"/);
+  assert.ok(!res.headers['set-cookie']);
+});
+
+test('stats: tampered, expired, or other-key sessions are rejected', async () => {
+  const h = statsSetup();
+  const login = mkRes();
+  await h(mkReq({ method: 'POST', headers: {}, body: { key: 'sekret' } }), login);
+  const good = cookieOf(login).split('=')[1];
+  const [exp, mac] = good.split('.');
+  for (const bad of [`${Number(exp) + 99999}.${mac}`, `${exp}.x${mac.slice(1)}`, 'garbage', '']) {
+    const res = await getStats(h, { headers: { cookie: `stats_session=${bad}` } });
+    assert.ok(!/<table/.test(res.body), bad);
+  }
+  const later = createStatsHandler({ fetchImpl: async () => ({ ok: true, json: async () => [] }), env: { ...ENV, STATS_KEY: 'sekret' }, now: () => T0 + 13 * 3600 * 1000 });
+  assert.ok(!/<table/.test((await getStats(later, { headers: { cookie: `stats_session=${good}` } })).body), 'expires after 12h');
+  const rotated = statsSetup({ STATS_KEY: 'new-key' });
+  assert.ok(!/<table/.test((await getStats(rotated, { headers: { cookie: `stats_session=${good}` } })).body), 'rotating the key signs everyone out');
+});
+
+test('stats: sign out clears the cookie', async () => {
+  const res = mkRes();
+  await statsSetup()(mkReq({ method: 'POST', headers: {}, body: { action: 'logout' } }), res);
+  assert.strictEqual(res.statusCode, 303);
+  assert.match(String(res.headers['set-cookie']), /^stats_session=; .*Max-Age=0/);
 });

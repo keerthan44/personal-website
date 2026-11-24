@@ -1,4 +1,4 @@
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { clientIp, originAllowed } from './guard.mjs';
 
 export const EVENTS = ['view', 'talk-click', 'book-click', 'call-connected', 'call-offline', 'call-ended', 'question'];
@@ -131,12 +131,53 @@ function toMap(raw) {
   return m;
 }
 
+const same = (x, y) => timingSafeEqual(createHash('sha256').update(x).digest(), createHash('sha256').update(y).digest());
+
 function keyOk(env, given) {
   const want = env.STATS_KEY;
   if (!want || typeof given !== 'string' || !given) return false;
-  const a = createHash('sha256').update(given).digest();
-  const b = createHash('sha256').update(want).digest();
-  return timingSafeEqual(a, b);
+  return same(given, want);
+}
+
+/* The stats key never travels in a URL (history, logs, Referer). Browsers sign in once with a
+   POSTed form and get a short-lived, HttpOnly session cookie scoped to this endpoint; scripts
+   send "Authorization: Bearer <key>". The cookie holds an expiry and an HMAC, never the key. */
+export const STATS_COOKIE = 'stats_session';
+const SESSION_SECS = 12 * 60 * 60;
+const STATS_PATH = '/api/stats';
+const sign = (key, exp) => createHmac('sha256', key).update(`stats-session:${exp}`).digest('base64url');
+
+export function makeSession(env, nowMs) {
+  const exp = Math.floor(nowMs / 1000) + SESSION_SECS;
+  return `${exp}.${sign(env.STATS_KEY, exp)}`;
+}
+
+function sessionOk(env, value, nowMs) {
+  if (!env.STATS_KEY || typeof value !== 'string') return false;
+  const [exp, mac] = value.split('.');
+  if (!/^\d{1,12}$/.test(exp || '') || Number(exp) <= nowMs / 1000 || !mac) return false;
+  return same(mac, sign(env.STATS_KEY, exp));
+}
+
+function readCookie(req, name) {
+  const raw = (req.headers && req.headers.cookie) || '';
+  for (const part of raw.split(';')) {
+    const i = part.indexOf('=');
+    if (i > 0 && part.slice(0, i).trim() === name) {
+      try { return decodeURIComponent(part.slice(i + 1).trim()); } catch { return ''; }
+    }
+  }
+  return '';
+}
+
+function bearerKey(req) {
+  const m = /^Bearer\s+(\S+)\s*$/i.exec((req.headers && req.headers.authorization) || '');
+  return m ? m[1] : '';
+}
+
+function sessionHeader(env, value, maxAge) {
+  const secure = env.NODE_ENV === 'production' ? '; Secure' : '';
+  return `${STATS_COOKIE}=${value}; Path=${STATS_PATH}; Max-Age=${maxAge}; HttpOnly; SameSite=Strict${secure}`;
 }
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -146,23 +187,49 @@ try { regionNames = new Intl.DisplayNames(['en'], { type: 'region' }); } catch {
 const countryName = (code) => { try { return (regionNames && regionNames.of(code)) || code; } catch { return code; } };
 const geoRow = (c) => `<tr><th scope="row">${esc(countryName(c.code))}</th><td>${c.views}</td><td>${c.talkClicks}</td><td>${c.bookClicks}</td></tr>`;
 
-function renderHtml(data, key) {
-  const t = data.totals;
-  const switcher = ENVS.map((name) => (name === data.env
-    ? `<li><span aria-current="page">${name}</span></li>`
-    : `<li><a href="?key=${esc(encodeURIComponent(key))}&amp;env=${name}">${name}</a></li>`)).join('');
-  const row = (r) => `<tr><th scope="row">${esc(r.date)}</th><td>${r.visitors}</td><td>${r.views}</td><td>${r.talkClicks}</td><td>${r.clickRate}%</td><td>${r.bookClicks}</td><td>${r.connected}</td><td>${r.offline}</td><td>${r.tokens}</td><td>${r.lengths['<15']} / ${r.lengths['15-60']} / ${r.lengths['60-120']} / ${r.lengths['120+']}</td><td>${r.questions}</td></tr>`;
-  return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex"><title>Site stats (${esc(data.env)})</title>
-<style>
-:root{--bg:#0e0f12;--fg:#eef0f3;--muted:#a3a8b2;--accent:#ff7a4d;--line:#2a2d34}
+const PAGE_CSS = `:root{--bg:#0e0f12;--fg:#eef0f3;--muted:#a3a8b2;--accent:#ff7a4d;--line:#2a2d34}
 *{box-sizing:border-box}
 body{margin:0;padding:24px 16px;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif}
 main{max-width:1000px;margin:0 auto}
-h2{font-size:1.1rem;margin:24px 0 8px}.sum{display:flex;flex-wrap:wrap;gap:8px 24px;list-style:none;padding:0;margin:0 0 24px;color:var(--muted)}.sum b{color:var(--fg)}
 h1{font-size:1.6rem;margin:0 0 8px}
 p{color:var(--muted);margin:0 0 20px}
+button{min-height:44px;padding:0 18px;border:1px solid var(--line);border-radius:999px;background:transparent;color:var(--fg);font:inherit;cursor:pointer}
+button:hover{border-color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}`;
+
+function renderLogin(error) {
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><meta name="referrer" content="no-referrer"><title>Site stats: sign in</title>
+<style>${PAGE_CSS}
+main{max-width:420px}
+label{display:block;margin:0 0 6px}
+input{width:100%;min-height:44px;padding:0 14px;margin:0 0 14px;border:1px solid #6b7080;border-radius:12px;background:#14161a;color:var(--fg);font:inherit}
+.err{color:var(--fg);border:1px solid rgba(255,122,77,.6);background:rgba(255,122,77,.08);border-radius:12px;padding:10px 14px}
+.go{background:var(--fg);color:var(--bg);border:0;font-weight:600}
+</style></head><body><main>
+<h1>Site stats</h1>
+<p>Enter the stats key to see visits and calls. You stay signed in on this browser for 12 hours.</p>
+${error ? `<p class="err" id="err" role="alert">${esc(error)}</p>` : ''}
+<form method="post" action="${STATS_PATH}">
+<label for="key">Stats key</label>
+<input id="key" name="key" type="password" autocomplete="current-password" required autofocus${error ? ' aria-describedby="err" aria-invalid="true"' : ''}>
+<button class="go" type="submit">Show stats</button>
+</form></main></body></html>`;
+}
+
+function renderHtml(data) {
+  const t = data.totals;
+  const switcher = ENVS.map((name) => (name === data.env
+    ? `<li><span aria-current="page">${name}</span></li>`
+    : `<li><a href="?env=${name}">${name}</a></li>`)).join('');
+  const row = (r) => `<tr><th scope="row">${esc(r.date)}</th><td>${r.visitors}</td><td>${r.views}</td><td>${r.talkClicks}</td><td>${r.clickRate}%</td><td>${r.bookClicks}</td><td>${r.connected}</td><td>${r.offline}</td><td>${r.tokens}</td><td>${r.lengths['<15']} / ${r.lengths['15-60']} / ${r.lengths['60-120']} / ${r.lengths['120+']}</td><td>${r.questions}</td></tr>`;
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><meta name="referrer" content="no-referrer"><title>Site stats (${esc(data.env)})</title>
+<style>${PAGE_CSS}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+h2{font-size:1.1rem;margin:24px 0 8px}.sum{display:flex;flex-wrap:wrap;gap:8px 24px;list-style:none;padding:0;margin:0 0 24px;color:var(--muted)}.sum b{color:var(--fg)}
 .wrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;min-width:720px}
 table.geo{min-width:0;max-width:560px}
@@ -175,7 +242,8 @@ nav ul{display:flex;gap:16px;list-style:none;padding:0;margin:0 0 20px}
 nav a{color:var(--accent)}nav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 nav [aria-current]{color:var(--fg);font-weight:700}
 </style></head><body><main>
-<h1>Site stats: ${esc(data.env)}</h1>
+<div class="top"><h1>Site stats: ${esc(data.env)}</h1>
+<form method="post" action="${STATS_PATH}"><input type="hidden" name="action" value="logout"><button type="submit">Sign out</button></form></div>
 <p>Environment: ${esc(data.env)}. Last ${STATS_DAYS} days, UTC. No cookies, no stored IPs.</p>
 <nav aria-label="Environment"><ul>${switcher}</ul></nav>
 <section aria-labelledby="sum"><h2 id="sum">30-day totals</h2>
@@ -198,9 +266,30 @@ export function createStatsHandler({ fetchImpl, env, now }) {
   return async function handler(req, res) {
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Robots-Tag', 'noindex');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    if (!env.STATS_KEY) return res.status(404).send('Not found');
+    const html = (code, body) => { res.setHeader('Content-Type', 'text/html; charset=utf-8'); return res.status(code).send(body); };
+
+    if (req.method === 'POST') {
+      const body = req.body && typeof req.body === 'object' ? req.body : {};
+      if (body.action === 'logout') {
+        res.setHeader('Set-Cookie', sessionHeader(env, '', 0));
+      } else if (keyOk(env, typeof body.key === 'string' ? body.key : '')) {
+        res.setHeader('Set-Cookie', sessionHeader(env, makeSession(env, now()), SESSION_SECS));
+      } else {
+        return html(401, renderLogin("That key didn't match. Check it and try again."));
+      }
+      res.setHeader('Location', STATS_PATH);   // post/redirect/get: refresh never resubmits the key
+      return res.status(303).end();
+    }
+    if (req.method !== 'GET') return res.status(405).send('Method not allowed');
+
     const q = req.query || {};
-    if (req.method !== 'GET' || !keyOk(env, typeof q.key === 'string' ? q.key : '')) {
-      return res.status(404).send('Not found');
+    const bearer = bearerKey(req);
+    const authed = bearer ? keyOk(env, bearer) : sessionOk(env, readCookie(req, STATS_COOKIE), now());
+    if (!authed) {
+      if (bearer || q.format === 'json') return res.status(401).json({ error: 'Send Authorization: Bearer <stats key>' });
+      return html(200, renderLogin(''));
     }
     const redis = redisFromEnv(env, fetchImpl);
     if (!redis) return res.status(503).send('Analytics store not configured');
@@ -250,7 +339,6 @@ export function createStatsHandler({ fetchImpl, env, now }) {
       .slice(0, MAX_COUNTRIES);
     const data = { env: pre, days, totals, countries };
     if (q.format === 'json') return res.status(200).json(data);
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    return res.status(200).send(renderHtml(data, q.key));
+    return html(200, renderHtml(data));
   };
 }
