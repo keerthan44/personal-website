@@ -272,6 +272,29 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
 .btn.end:hover { background: #f2555a; }
 .call .fine { margin: 12px 0 0; color: var(--muted); font-size: 0.78rem; }
 
+/* phones: the call is a bottom sheet and the orb stays in view above it (the page is pinned to the top while calling) */
+@media (max-width: 900px) {
+  html.calling, html.calling body { overflow: hidden; }
+  .hero .copy > :not(.call-wrap) { transition: opacity 300ms ease-in-out, visibility 300ms; }
+  html.calling .hero .copy > :not(.call-wrap) { opacity: 0; visibility: hidden; }
+  .call-wrap { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: block; opacity: 1; padding: 0 max(8px, env(safe-area-inset-right, 0px)) max(8px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)); transform: translateY(105%); transition: transform 360ms ease-in-out; }
+  .call-wrap.open { transform: none; transition: transform 420ms cubic-bezier(.2,.7,.2,1); }
+  .call-wrap > .call-clip { overflow: visible; }
+  .call-wrap .call, .call-wrap.open .call { transform: none; max-width: 560px; margin: 0 auto; max-height: calc(100svh - 64px - 30svh); overflow-y: auto; overscroll-behavior: contain; padding: 14px 14px 12px; background: rgba(20, 22, 26, 0.94); }
+  .call .log { max-height: 22svh; margin-top: 10px; }
+  /* labels stay for screen readers; the chips and the input explain themselves on screen */
+  .call .qs-l, .call .ask label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .call .ask input::placeholder { color: var(--muted); }
+  .call .qs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -14px; padding: 2px 14px; scroll-padding-inline: 14px; }
+  .call .qs::-webkit-scrollbar { display: none; }
+  .call .qs button { flex: none; }
+  .call .qs { margin-top: 12px; }
+  .call .ask { margin-top: 10px; }
+  .call-act { margin-top: 12px; }
+  .call .fine { margin-top: 10px; font-size: 0.72rem; }
+}
+@media (max-width: 900px) and (prefers-reduced-motion: reduce) { .call-wrap, .call-wrap.open, .hero .copy > :not(.call-wrap) { transition: none !important; } }
+
 .no-motion .js .reveal, .no-motion .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .away svg, .talk .wv i, .call .ava::before, .call .ava::after, .call.talking .ava i, .call .dot, .call .log p { animation: none !important; } .card:hover { transform: none; } }
 
@@ -326,7 +349,7 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
           <div class="qs" id="callQs" role="group" aria-labelledby="callQsL"></div>
           <form class="ask" id="callAsk" autocomplete="off">
             <label class="mono" for="callText">Type a question</label>
-            <div class="ask-row"><input id="callText" name="q" type="text" maxlength="300" enterkeyhint="send"><button type="submit" class="send">Send</button></div>
+            <div class="ask-row"><input id="callText" name="q" type="text" maxlength="300" enterkeyhint="send" placeholder="Type a question"><button type="submit" class="send">Send</button></div>
           </form>
           <div class="call-act">
             <button type="button" class="btn ghost mic" id="callMic" aria-pressed="true" hidden><span>Mic</span><span aria-hidden="true" id="callMicT"> on</span></button>
@@ -622,7 +645,8 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 50); camera.position.set(0, 0.15, 6.4);
   function resize() { renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
   addEventListener('resize', resize); resize();
-  let px = 0, py = 0, tx = 0, ty = 0, out = 0, visible = true;
+  let px = 0, py = 0, tx = 0, ty = 0, out = 0, visible = true, callK = 0, callMid = 200, callS = 0.5;
+  const root = document.documentElement, sheetEl = document.getElementById('callWrap');
   addEventListener('pointermove', e => { tx = e.clientX / innerWidth - 0.5; ty = e.clientY / innerHeight - 0.5; });
   const hero = document.querySelector('.hero'), clock = new THREE.Clock();
   let heroH = hero.offsetHeight; addEventListener('resize', () => { heroH = hero.offsetHeight; });
@@ -638,7 +662,12 @@ footer { margin-top: 96px; padding-top: 16px; border-top: 1px solid var(--line);
     const wide = innerWidth > 900;
     // phones: the portrait sits in the top band under the header and scrolls up with the page
     const k = 2 * 6.4 * Math.tan(19 * Math.PI / 180) / innerHeight;
-    group.position.set(wide ? 1.85 : 0, wide ? -0.05 : (innerHeight * k / 2 - 76 * k - 0.86 + scrollY * k), 0); group.scale.setScalar(wide ? 0.95 : 0.5);
+    // during a call the sheet covers the lower screen: centre the orb in the space between header and sheet
+    const callOn = !wide && root.classList.contains('calling');
+    if (callOn) { const top = Math.min(sheetEl.getBoundingClientRect().top, innerHeight); callMid = (64 + top) / 2; callS = Math.min(0.6, 0.8 * (top - 64) / 357); } // 357 css px across per unit scale
+    callK += ((callOn ? 1 : 0) - callK) * (reduce ? 1 : 0.1);
+    const yRest = innerHeight * k / 2 - 76 * k - 0.86 + scrollY * k, yCall = (innerHeight / 2 - callMid) * k + 0.15;
+    group.position.set(wide ? 1.85 : 0, wide ? -0.05 : yRest + (yCall - yRest) * callK, 0); group.scale.setScalar(wide ? 0.95 : 0.5 + (callS - 0.5) * callK);
     group.rotation.y = px * 0.42 + (reduce ? 0 : 0.06 * Math.sin(t * 0.35)); group.rotation.x = py * 0.3;
     if (cubes.visible) renderer.render(scene, camera); else if (visible) renderer.clear();
     visible = cubes.visible;
@@ -808,13 +837,15 @@ function afterTransition(ms, fn) {
   if (reduce()) { fn(); return; }
   let done = false;
   const go = () => { if (done) return; done = true; wrap.removeEventListener('transitionend', onEnd); fn(); };
-  const onEnd = e => { if (e.target === wrap && e.propertyName === 'grid-template-rows') go(); };
+  const onEnd = e => { if (e.target === wrap && (e.propertyName === 'grid-template-rows' || e.propertyName === 'transform')) go(); };
   wrap.addEventListener('transitionend', onEnd);
   setTimeout(go, ms + 80);
 }
+const sheet = () => matchMedia('(max-width: 900px)').matches;   // phones: bottom sheet, orb kept in view
 function openPanel() {
   const seq = ++panelSeq;
   panelScroll = scrollY;
+  if (sheet()) { scrollTo({ top: 0, behavior: 'instant' }); document.documentElement.classList.add('calling'); }
   wrap.inert = false; wrap.hidden = false; wrap.classList.remove('settled');
   void wrap.offsetHeight;                          // commit the collapsed state so the open transitions
   wrap.classList.add('open');
@@ -823,9 +854,15 @@ function openPanel() {
 function closePanel(after) {
   const seq = ++panelSeq;
   wrap.inert = true; wrap.classList.remove('settled', 'open');
-  // the open panel made the hero taller and the visitor scrolled down to reach it; as it collapses,
-  // glide back to where they started so the next section doesn't slide up over the orb
-  if (scrollY > panelScroll + 4) scrollTo({ top: panelScroll, behavior: reduce() ? 'auto' : 'smooth' });
+  if (document.documentElement.classList.contains('calling')) {
+    // phones: unpin and put the visitor back where they pressed Talk
+    document.documentElement.classList.remove('calling');
+    scrollTo({ top: panelScroll, behavior: 'instant' });
+  } else if (scrollY > panelScroll + 4) {
+    // the open panel made the hero taller and the visitor scrolled down to reach it; as it collapses,
+    // glide back to where they started so the next section doesn't slide up over the orb
+    scrollTo({ top: panelScroll, behavior: reduce() ? 'auto' : 'smooth' });
+  }
   afterTransition(360, () => { if (seq !== panelSeq) return; wrap.hidden = true; wrap.inert = false; after(); });
 }
 function resetTalkLabel() {
